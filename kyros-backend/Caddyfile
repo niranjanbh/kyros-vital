@@ -1,0 +1,10 @@
+# Phase 1 EC2 reverse proxy — uncomment and fill in your domain before deploy.
+#
+# your-domain.com {
+#     reverse_proxy localhost:8000
+#     encode gzip zstd
+#     log {
+#         output file /var/log/caddy/access.log
+#         format json
+#     }
+# }

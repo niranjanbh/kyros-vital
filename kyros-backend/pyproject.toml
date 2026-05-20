@@ -1,0 +1,72 @@
+[tool.poetry]
+name = "kyros-backend"
+version = "0.1.0"
+description = "Kyros backend — wellness (Phase 1) + clinic (Phase 2)"
+authors = ["Niranjan <niranjanb14@gmail.com>"]
+readme = "README.md"
+packages = [{ include = "app" }]
+
+[tool.poetry.dependencies]
+python = "^3.12"
+fastapi = "^0.115.0"
+uvicorn = { extras = ["standard"], version = "^0.32.0" }
+gunicorn = "^23.0.0"
+sqlalchemy = { extras = ["asyncio"], version = "^2.0.36" }
+alembic = "^1.14.0"
+pydantic = "^2.9.0"
+pydantic-settings = "^2.6.0"
+asyncpg = "^0.30.0"
+greenlet = "^3.1.0"
+redis = "^5.2.0"
+structlog = "^24.4.0"
+httpx = "^0.27.0"
+slowapi = "^0.1.9"
+typer = { extras = ["all"], version = "^0.13.0" }
+celery = { extras = ["redis"], version = "^5.4.0" }
+python-multipart = "^0.0.12"
+aiofiles = "^24.1.0"
+email-validator = "^2.2.0"
+
+[tool.poetry.group.dev.dependencies]
+pytest = "^8.3.0"
+pytest-asyncio = "^0.24.0"
+pytest-cov = "^6.0.0"
+mypy = "^1.13.0"
+ruff = "^0.8.0"
+pre-commit = "^4.0.0"
+anyio = { extras = ["trio"], version = "^4.6.0" }
+types-aiofiles = "^24.1.0"
+
+[tool.ruff]
+line-length = 100
+target-version = "py312"
+
+[tool.ruff.lint]
+select = ["E", "F", "I", "N", "UP", "B", "C4", "SIM", "ANN"]
+ignore = ["ANN401", "B008"]
+
+[tool.ruff.lint.per-file-ignores]
+"tests/**" = ["ANN"]
+"scripts/**" = ["ANN"]
+"app/cli.py" = ["ANN"]
+"alembic/versions/**" = ["E501", "I001", "UP035", "UP007"]
+
+[tool.mypy]
+python_version = "3.12"
+strict = true
+plugins = ["pydantic.mypy"]
+ignore_missing_imports = true
+
+[[tool.mypy.overrides]]
+module = ["slowapi.*", "celery.*", "structlog.*"]
+ignore_missing_imports = true
+
+[tool.pytest.ini_options]
+asyncio_mode = "auto"
+
+testpaths = ["tests"]
+addopts = "--cov=app --cov-report=term-missing --cov-report=html"
+
+[build-system]
+requires = ["poetry-core"]
+build-backend = "poetry.core.masonry.api"
