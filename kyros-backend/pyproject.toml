@@ -26,6 +26,8 @@ celery = { extras = ["redis"], version = "^5.4.0" }
 python-multipart = "^0.0.12"
 aiofiles = "^24.1.0"
 email-validator = "^2.2.0"
+jinja2 = "^3.1.0"
+bcrypt = "^4.0.0"
 
 [tool.poetry.group.dev.dependencies]
 pytest = "^8.3.0"
@@ -50,6 +52,7 @@ ignore = ["ANN401", "B008"]
 "scripts/**" = ["ANN"]
 "app/cli.py" = ["ANN"]
 "alembic/versions/**" = ["E501", "I001", "UP035", "UP007"]
+"app/admin/**" = ["ANN"]
 
 [tool.mypy]
 python_version = "3.12"
@@ -58,8 +61,12 @@ plugins = ["pydantic.mypy"]
 ignore_missing_imports = true
 
 [[tool.mypy.overrides]]
-module = ["slowapi.*", "celery.*", "structlog.*"]
+module = ["slowapi.*", "celery.*", "structlog.*", "bcrypt.*"]
 ignore_missing_imports = true
+
+[[tool.mypy.overrides]]
+module = ["app.admin.*"]
+warn_return_any = false
 
 [tool.pytest.ini_options]
 asyncio_mode = "auto"

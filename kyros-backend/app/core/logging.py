@@ -1,6 +1,7 @@
 import contextvars
 import uuid
 from collections.abc import Awaitable, Callable
+from typing import Any
 
 import structlog
 from starlette.middleware.base import BaseHTTPMiddleware
@@ -14,6 +15,18 @@ request_id_var: contextvars.ContextVar[str] = contextvars.ContextVar("request_id
 
 _CallNext = Callable[[Request], Awaitable[Response]]
 
+# Keys that must never appear in structlog output — PHI redaction requirement
+_LOG_PHI_KEYS: frozenset[str] = frozenset(
+    {"payload", "metadata", "notes", "dose", "lab_value", "result"}
+)
+
+
+def redact_phi(_logger: Any, _method: str, event_dict: dict[str, Any]) -> dict[str, Any]:
+    for key in _LOG_PHI_KEYS:
+        if key in event_dict:
+            event_dict[key] = "[REDACTED]"
+    return event_dict
+
 
 def configure_logging() -> None:
     shared_processors: list[structlog.types.Processor] = [
@@ -21,6 +34,7 @@ def configure_logging() -> None:
         structlog.stdlib.add_log_level,
         structlog.processors.TimeStamper(fmt="iso"),
         structlog.processors.StackInfoRenderer(),
+        redact_phi,
     ]
 
     if settings.is_production:

@@ -4,7 +4,7 @@ services:
   postgres:
     image: postgres:16-alpine
     environment:
-      POSTGRES_USER: kyros
+      POSTGRES_USER: Kyros
       POSTGRES_PASSWORD: kyros
       POSTGRES_DB: kyros
     ports:

@@ -1,0 +1,48 @@
+{% extends "base.html" %}
+{% block content %}
+<h1>System Health</h1>
+
+<div class="section">
+  <h3>Services</h3>
+  <div class="metric-grid">
+    <div class="metric-card">
+      <div class="label">Database</div>
+      <div class="value" style="font-size:1.2rem;color:{% if db_ok %}var(--positive){% else %}var(--critical){% endif %}">
+        {% if db_ok %}ok{% else %}fail{% endif %}
+      </div>
+    </div>
+    <div class="metric-card">
+      <div class="label">Redis</div>
+      <div class="value" style="font-size:1.2rem;color:{% if redis_ok %}var(--positive){% else %}var(--critical){% endif %}">
+        {% if redis_ok %}ok{% else %}fail{% endif %}
+      </div>
+    </div>
+    <div class="metric-card">
+      <div class="label">Alembic revision</div>
+      <div style="font-family:monospace;font-size:0.9rem;margin-top:6px;">{{ alembic_version }}</div>
+    </div>
+  </div>
+</div>
+
+{% if disk %}
+<div class="section">
+  <h3>Disk (root)</h3>
+  <div class="metric-grid">
+    <div class="metric-card"><div class="label">Used %</div><div class="value">{{ disk.used_pct }}%</div></div>
+    <div class="metric-card"><div class="label">Used</div><div class="value" style="font-size:1.3rem;">{{ disk.used_gb }} GB</div></div>
+    <div class="metric-card"><div class="label">Free</div><div class="value" style="font-size:1.3rem;">{{ disk.free_gb }} GB</div></div>
+    <div class="metric-card"><div class="label">Total</div><div class="value" style="font-size:1.3rem;">{{ disk.total_gb }} GB</div></div>
+  </div>
+</div>
+{% endif %}
+
+{% if sentry_url or uptime_url %}
+<div class="section">
+  <h3>External monitors</h3>
+  <div style="display:flex;gap:16px;">
+    {% if sentry_url %}<a href="{{ sentry_url }}" target="_blank" class="btn">Open Sentry</a>{% endif %}
+    {% if uptime_url %}<a href="{{ uptime_url }}" target="_blank" class="btn">Open Better Stack</a>{% endif %}
+  </div>
+</div>
+{% endif %}
+{% endblock %}

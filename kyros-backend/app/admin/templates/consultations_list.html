@@ -1,0 +1,54 @@
+{% extends "base.html" %}
+{% block content %}
+<h1>Consultations</h1>
+
+{% if flash %}<div class="alert alert-ok">{{ flash }}</div>{% endif %}
+{% if error %}<div class="alert alert-error">{{ error }}</div>{% endif %}
+
+<form method="get" class="filter-bar">
+  <div class="form-group" style="margin:0;">
+    <select name="status">
+      <option value="">All statuses</option>
+      {% for s in valid_statuses %}
+      <option value="{{ s }}" {% if filter_status == s %}selected{% endif %}>{{ s }}</option>
+      {% endfor %}
+    </select>
+  </div>
+  <button type="submit" class="btn btn-sm">Filter</button>
+  <a href="/admin/consultations" class="btn btn-sm">Clear</a>
+</form>
+
+<p class="muted" style="margin-bottom:16px;font-size:0.8rem;">
+  Showing {{ consultations|length }} of {{ total }} (page {{ page }})
+</p>
+
+<div class="table-wrap">
+  <table>
+    <thead><tr>
+      <th>ID</th><th>Patient</th><th>Phone</th><th>Condition</th>
+      <th>Status</th><th>Preferred slot</th><th>Fee (₹)</th>
+    </tr></thead>
+    <tbody>
+      {% for c in consultations %}
+      <tr>
+        <td><a href="/admin/consultations/{{ c.id }}" class="mono">{{ str(c.id)[:8] }}…</a></td>
+        <td><a href="/admin/consultations/{{ c.id }}">{{ c.patient_name }}</a></td>
+        <td class="mono">{{ c.patient_phone }}</td>
+        <td class="muted">{{ c.condition_category or '—' }}</td>
+        <td><span class="badge badge-{{ c.status }}">{{ c.status }}</span></td>
+        <td class="muted">{{ c.preferred_slot.strftime('%Y-%m-%d %H:%M') if c.preferred_slot else '—' }}</td>
+        <td class="mono">{{ (c.fee_paid_paise / 100) | int if c.fee_paid_paise else '—' }}</td>
+      </tr>
+      {% else %}
+      <tr><td colspan="7" class="muted">No consultations found.</td></tr>
+      {% endfor %}
+    </tbody>
+  </table>
+</div>
+
+<div class="pagination">
+  {% if page > 1 %}<a href="?page={{ page - 1 }}&status={{ filter_status }}">&larr; Prev</a>{% endif %}
+  <span>Page {{ page }}</span>
+  {% if consultations|length == page_size %}<a href="?page={{ page + 1 }}&status={{ filter_status }}">Next &rarr;</a>{% endif %}
+</div>
+{% endblock %}

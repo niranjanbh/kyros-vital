@@ -11,6 +11,14 @@ class Settings(BaseSettings):
     SIGNING_SECRET: str = "change-me-in-production"
     LOG_LEVEL: str = "INFO"
     ENV: str = "development"
+    TESTING: bool = False
+
+    # Admin panel
+    ADMIN_USERNAME: str = "admin"
+    ADMIN_PASSWORD_HASH: str = ""  # bcrypt hash — set via `python -m app.admin.cli set-password`
+    SENTRY_DASHBOARD_URL: str = ""
+    UPTIME_DASHBOARD_URL: str = ""
+    ADMIN_SESSION_TIMEOUT_MINUTES: int = 60  # informational only in Phase 1
 
     @property
     def is_production(self) -> bool:

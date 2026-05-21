@@ -1,23 +1,43 @@
 import asyncio
-from collections.abc import AsyncGenerator
+import os
+import tempfile
+from collections.abc import AsyncGenerator, Generator
 
-import pytest
-import pytest_asyncio
-from httpx import ASGITransport, AsyncClient
-from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker, create_async_engine
-from sqlalchemy.pool import NullPool
+# Set DATABASE_URL *before* any app module is imported so that
+# app.database.engine, AsyncSessionLocal, and the audit middleware all
+# point at the test database.
+os.environ.setdefault("DATABASE_URL", "postgresql+asyncpg://kyros:kyros@localhost:5433/kyros_test")
+os.environ.setdefault("TESTING", "true")
+os.environ.setdefault("STORAGE_DIR", tempfile.mkdtemp(prefix="kyros_test_storage_"))
+os.environ.setdefault("SIGNING_SECRET", "test-signing-secret")
+os.environ.setdefault("ADMIN_USERNAME", "testadmin")
+# Pre-computed bcrypt hash for "testpassword" — avoids bcrypt cost per test run
+os.environ.setdefault(
+    "ADMIN_PASSWORD_HASH",
+    "$2b$12$Z4ADivVyenK.e9gZybyu.O/90einLThkuexEX9YEwi1OVCCuJdjp.",
+)
+
+import pytest  # noqa: E402
+import pytest_asyncio  # noqa: E402
+from httpx import ASGITransport, AsyncClient  # noqa: E402
+from sqlalchemy.ext.asyncio import (  # noqa: E402
+    AsyncSession,
+    async_sessionmaker,
+    create_async_engine,
+)
+from sqlalchemy.pool import NullPool  # noqa: E402
 
 # Import all models so Base.metadata is fully populated before create_all
-import app.shared.models  # noqa: F401
-import app.wellness.models  # noqa: F401
-from app.database import Base, get_db
-from app.main import app
+import app.clinic.models  # noqa: F401, E402
+import app.shared.models  # noqa: F401, E402
+import app.wellness.models  # noqa: F401, E402
+from app.database import Base, get_db  # noqa: E402
+from app.main import app  # noqa: E402
 
 TEST_DATABASE_URL = "postgresql+asyncpg://kyros:kyros@localhost:5433/kyros_test"
 
 
 async def _run_schema(drop: bool = False) -> None:
-    """Create (or drop+create) test schema in a self-contained event loop run."""
     eng = create_async_engine(TEST_DATABASE_URL, echo=False, poolclass=NullPool)
     async with eng.begin() as conn:
         if drop:
@@ -34,29 +54,25 @@ async def _drop_schema() -> None:
 
 
 @pytest.fixture(scope="session", autouse=True)
-def _setup_schema() -> "Generator[None, None, None]":
-    """Session-scoped SYNC fixture — schema setup via asyncio.run() avoids loop-scope issues."""
+def _setup_schema() -> Generator[None, None, None]:
+    """Session-scoped sync fixture — asyncio.run() keeps schema setup in its own loop."""
     asyncio.run(_run_schema(drop=True))
     yield
     asyncio.run(_drop_schema())
 
 
-# Type stub for the generator — not imported at runtime
-from collections.abc import Generator  # noqa: E402
-
-
 @pytest_asyncio.fixture
 async def db() -> AsyncGenerator[AsyncSession, None]:
-    # NullPool + function-scoped loop: fresh connection each test, no cross-loop contamination.
+    # NullPool + function-scoped loop: fresh connection per test, no cross-loop contamination.
     eng = create_async_engine(TEST_DATABASE_URL, echo=False, poolclass=NullPool)
-    session_factory = async_sessionmaker(
+    factory = async_sessionmaker(
         bind=eng,
         class_=AsyncSession,
         expire_on_commit=False,
         autocommit=False,
         autoflush=False,
     )
-    async with session_factory() as session:
+    async with factory() as session:
         yield session
     await eng.dispose()
 
@@ -64,7 +80,12 @@ async def db() -> AsyncGenerator[AsyncSession, None]:
 @pytest_asyncio.fixture
 async def client(db: AsyncSession) -> AsyncGenerator[AsyncClient, None]:
     async def _override_db() -> AsyncGenerator[AsyncSession, None]:
-        yield db
+        try:
+            yield db
+            await db.commit()  # mirror real get_db so FK-dependent middleware sees committed rows
+        except Exception:
+            await db.rollback()
+            raise
 
     app.dependency_overrides[get_db] = _override_db
     async with AsyncClient(transport=ASGITransport(app=app), base_url="http://test") as ac:

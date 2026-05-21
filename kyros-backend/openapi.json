@@ -1,0 +1,3419 @@
+{
+    "openapi": "3.1.0",
+    "info": {
+        "title": "Kyros Backend",
+        "description": "Wellness (Phase 1) + Clinic (Phase 2)",
+        "version": "0.1.0"
+    },
+    "paths": {
+        "/health": {
+            "get": {
+                "tags": [
+                    "Health"
+                ],
+                "summary": "Health",
+                "operationId": "health_health_get",
+                "responses": {
+                    "200": {
+                        "description": "Successful Response",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "additionalProperties": true,
+                                    "type": "object",
+                                    "title": "Response Health Health Get"
+                                }
+                            }
+                        }
+                    }
+                },
+                "parameters": [
+                    {
+                        "name": "X-Device-Id",
+                        "in": "header",
+                        "required": true,
+                        "description": "16\u201364 char alphanumeric+dash device identifier for guest auth.",
+                        "schema": {
+                            "type": "string",
+                            "pattern": "^[a-zA-Z0-9\\-]{16,64}$"
+                        }
+                    }
+                ]
+            }
+        },
+        "/v1/users/guest": {
+            "post": {
+                "tags": [
+                    "Users"
+                ],
+                "summary": "Create Guest",
+                "description": "Idempotent find-or-create by X-Device-Id. Returns 201 on first creation, 200 on repeat.",
+                "operationId": "create_guest_v1_users_guest_post",
+                "responses": {
+                    "200": {
+                        "description": "Successful Response",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/UserRead"
+                                }
+                            }
+                        }
+                    }
+                },
+                "parameters": [
+                    {
+                        "name": "X-Device-Id",
+                        "in": "header",
+                        "required": true,
+                        "description": "16\u201364 char alphanumeric+dash device identifier for guest auth.",
+                        "schema": {
+                            "type": "string",
+                            "pattern": "^[a-zA-Z0-9\\-]{16,64}$"
+                        }
+                    }
+                ]
+            }
+        },
+        "/v1/users/me": {
+            "get": {
+                "tags": [
+                    "Users"
+                ],
+                "summary": "Get Me",
+                "operationId": "get_me_v1_users_me_get",
+                "responses": {
+                    "200": {
+                        "description": "Successful Response",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/UserRead"
+                                }
+                            }
+                        }
+                    }
+                },
+                "parameters": [
+                    {
+                        "name": "X-Device-Id",
+                        "in": "header",
+                        "required": true,
+                        "description": "16\u201364 char alphanumeric+dash device identifier for guest auth.",
+                        "schema": {
+                            "type": "string",
+                            "pattern": "^[a-zA-Z0-9\\-]{16,64}$"
+                        }
+                    }
+                ]
+            },
+            "patch": {
+                "tags": [
+                    "Users"
+                ],
+                "summary": "Update Me",
+                "operationId": "update_me_v1_users_me_patch",
+                "requestBody": {
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "$ref": "#/components/schemas/UserUpdate"
+                            }
+                        }
+                    },
+                    "required": true
+                },
+                "responses": {
+                    "200": {
+                        "description": "Successful Response",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/UserRead"
+                                }
+                            }
+                        }
+                    },
+                    "422": {
+                        "description": "Validation Error",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/HTTPValidationError"
+                                }
+                            }
+                        }
+                    }
+                },
+                "parameters": [
+                    {
+                        "name": "X-Device-Id",
+                        "in": "header",
+                        "required": true,
+                        "description": "16\u201364 char alphanumeric+dash device identifier for guest auth.",
+                        "schema": {
+                            "type": "string",
+                            "pattern": "^[a-zA-Z0-9\\-]{16,64}$"
+                        }
+                    }
+                ]
+            }
+        },
+        "/v1/wellness/tracked-items/": {
+            "get": {
+                "tags": [
+                    "Wellness"
+                ],
+                "summary": "List Tracked Items",
+                "operationId": "list_tracked_items_v1_wellness_tracked_items__get",
+                "parameters": [
+                    {
+                        "name": "category",
+                        "in": "query",
+                        "required": false,
+                        "schema": {
+                            "anyOf": [
+                                {
+                                    "enum": [
+                                        "medication",
+                                        "water",
+                                        "meal",
+                                        "workout",
+                                        "vital_check",
+                                        "custom"
+                                    ],
+                                    "type": "string"
+                                },
+                                {
+                                    "type": "null"
+                                }
+                            ],
+                            "title": "Category"
+                        }
+                    },
+                    {
+                        "name": "status",
+                        "in": "query",
+                        "required": false,
+                        "schema": {
+                            "anyOf": [
+                                {
+                                    "enum": [
+                                        "active",
+                                        "paused",
+                                        "discontinued"
+                                    ],
+                                    "type": "string"
+                                },
+                                {
+                                    "type": "null"
+                                }
+                            ],
+                            "title": "Status"
+                        }
+                    },
+                    {
+                        "name": "X-Device-Id",
+                        "in": "header",
+                        "required": true,
+                        "description": "16\u201364 char alphanumeric+dash device identifier for guest auth.",
+                        "schema": {
+                            "type": "string",
+                            "pattern": "^[a-zA-Z0-9\\-]{16,64}$"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Successful Response",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "type": "array",
+                                    "items": {
+                                        "$ref": "#/components/schemas/TrackedItemRead"
+                                    },
+                                    "title": "Response List Tracked Items V1 Wellness Tracked Items  Get"
+                                }
+                            }
+                        }
+                    },
+                    "422": {
+                        "description": "Validation Error",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/HTTPValidationError"
+                                }
+                            }
+                        }
+                    }
+                }
+            },
+            "post": {
+                "tags": [
+                    "Wellness"
+                ],
+                "summary": "Create Tracked Item",
+                "operationId": "create_tracked_item_v1_wellness_tracked_items__post",
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "oneOf": [
+                                    {
+                                        "$ref": "#/components/schemas/MedicationItemCreate"
+                                    },
+                                    {
+                                        "$ref": "#/components/schemas/WaterItemCreate"
+                                    },
+                                    {
+                                        "$ref": "#/components/schemas/MealItemCreate"
+                                    },
+                                    {
+                                        "$ref": "#/components/schemas/WorkoutItemCreate"
+                                    },
+                                    {
+                                        "$ref": "#/components/schemas/VitalCheckItemCreate"
+                                    },
+                                    {
+                                        "$ref": "#/components/schemas/CustomItemCreate"
+                                    }
+                                ],
+                                "discriminator": {
+                                    "propertyName": "category",
+                                    "mapping": {
+                                        "medication": "#/components/schemas/MedicationItemCreate",
+                                        "water": "#/components/schemas/WaterItemCreate",
+                                        "meal": "#/components/schemas/MealItemCreate",
+                                        "workout": "#/components/schemas/WorkoutItemCreate",
+                                        "vital_check": "#/components/schemas/VitalCheckItemCreate",
+                                        "custom": "#/components/schemas/CustomItemCreate"
+                                    }
+                                },
+                                "title": "Body"
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "201": {
+                        "description": "Successful Response",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/TrackedItemRead"
+                                }
+                            }
+                        }
+                    },
+                    "422": {
+                        "description": "Validation Error",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/HTTPValidationError"
+                                }
+                            }
+                        }
+                    }
+                },
+                "parameters": [
+                    {
+                        "name": "X-Device-Id",
+                        "in": "header",
+                        "required": true,
+                        "description": "16\u201364 char alphanumeric+dash device identifier for guest auth.",
+                        "schema": {
+                            "type": "string",
+                            "pattern": "^[a-zA-Z0-9\\-]{16,64}$"
+                        }
+                    }
+                ]
+            }
+        },
+        "/v1/wellness/tracked-items/{item_id}": {
+            "get": {
+                "tags": [
+                    "Wellness"
+                ],
+                "summary": "Get Tracked Item",
+                "operationId": "get_tracked_item_v1_wellness_tracked_items__item_id__get",
+                "parameters": [
+                    {
+                        "name": "item_id",
+                        "in": "path",
+                        "required": true,
+                        "schema": {
+                            "type": "string",
+                            "format": "uuid",
+                            "title": "Item Id"
+                        }
+                    },
+                    {
+                        "name": "X-Device-Id",
+                        "in": "header",
+                        "required": true,
+                        "description": "16\u201364 char alphanumeric+dash device identifier for guest auth.",
+                        "schema": {
+                            "type": "string",
+                            "pattern": "^[a-zA-Z0-9\\-]{16,64}$"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Successful Response",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/TrackedItemRead"
+                                }
+                            }
+                        }
+                    },
+                    "422": {
+                        "description": "Validation Error",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/HTTPValidationError"
+                                }
+                            }
+                        }
+                    }
+                }
+            },
+            "patch": {
+                "tags": [
+                    "Wellness"
+                ],
+                "summary": "Update Tracked Item",
+                "operationId": "update_tracked_item_v1_wellness_tracked_items__item_id__patch",
+                "parameters": [
+                    {
+                        "name": "item_id",
+                        "in": "path",
+                        "required": true,
+                        "schema": {
+                            "type": "string",
+                            "format": "uuid",
+                            "title": "Item Id"
+                        }
+                    },
+                    {
+                        "name": "X-Device-Id",
+                        "in": "header",
+                        "required": true,
+                        "description": "16\u201364 char alphanumeric+dash device identifier for guest auth.",
+                        "schema": {
+                            "type": "string",
+                            "pattern": "^[a-zA-Z0-9\\-]{16,64}$"
+                        }
+                    }
+                ],
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "$ref": "#/components/schemas/TrackedItemUpdate"
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "200": {
+                        "description": "Successful Response",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/TrackedItemRead"
+                                }
+                            }
+                        }
+                    },
+                    "422": {
+                        "description": "Validation Error",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/HTTPValidationError"
+                                }
+                            }
+                        }
+                    }
+                }
+            },
+            "delete": {
+                "tags": [
+                    "Wellness"
+                ],
+                "summary": "Delete Tracked Item",
+                "description": "Soft-delete: status \u2192 discontinued, all child reminders \u2192 inactive.",
+                "operationId": "delete_tracked_item_v1_wellness_tracked_items__item_id__delete",
+                "parameters": [
+                    {
+                        "name": "item_id",
+                        "in": "path",
+                        "required": true,
+                        "schema": {
+                            "type": "string",
+                            "format": "uuid",
+                            "title": "Item Id"
+                        }
+                    },
+                    {
+                        "name": "X-Device-Id",
+                        "in": "header",
+                        "required": true,
+                        "description": "16\u201364 char alphanumeric+dash device identifier for guest auth.",
+                        "schema": {
+                            "type": "string",
+                            "pattern": "^[a-zA-Z0-9\\-]{16,64}$"
+                        }
+                    }
+                ],
+                "responses": {
+                    "204": {
+                        "description": "Successful Response"
+                    },
+                    "422": {
+                        "description": "Validation Error",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/HTTPValidationError"
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        "/v1/wellness/tracked-items/{item_id}/reminders": {
+            "get": {
+                "tags": [
+                    "Wellness"
+                ],
+                "summary": "List Item Reminders",
+                "operationId": "list_item_reminders_v1_wellness_tracked_items__item_id__reminders_get",
+                "parameters": [
+                    {
+                        "name": "item_id",
+                        "in": "path",
+                        "required": true,
+                        "schema": {
+                            "type": "string",
+                            "format": "uuid",
+                            "title": "Item Id"
+                        }
+                    },
+                    {
+                        "name": "X-Device-Id",
+                        "in": "header",
+                        "required": true,
+                        "description": "16\u201364 char alphanumeric+dash device identifier for guest auth.",
+                        "schema": {
+                            "type": "string",
+                            "pattern": "^[a-zA-Z0-9\\-]{16,64}$"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Successful Response",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "type": "array",
+                                    "items": {
+                                        "$ref": "#/components/schemas/ReminderRead"
+                                    },
+                                    "title": "Response List Item Reminders V1 Wellness Tracked Items  Item Id  Reminders Get"
+                                }
+                            }
+                        }
+                    },
+                    "422": {
+                        "description": "Validation Error",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/HTTPValidationError"
+                                }
+                            }
+                        }
+                    }
+                }
+            },
+            "post": {
+                "tags": [
+                    "Wellness"
+                ],
+                "summary": "Create Item Reminder",
+                "operationId": "create_item_reminder_v1_wellness_tracked_items__item_id__reminders_post",
+                "parameters": [
+                    {
+                        "name": "item_id",
+                        "in": "path",
+                        "required": true,
+                        "schema": {
+                            "type": "string",
+                            "format": "uuid",
+                            "title": "Item Id"
+                        }
+                    },
+                    {
+                        "name": "X-Device-Id",
+                        "in": "header",
+                        "required": true,
+                        "description": "16\u201364 char alphanumeric+dash device identifier for guest auth.",
+                        "schema": {
+                            "type": "string",
+                            "pattern": "^[a-zA-Z0-9\\-]{16,64}$"
+                        }
+                    }
+                ],
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "$ref": "#/components/schemas/ReminderCreate"
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "201": {
+                        "description": "Successful Response",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/ReminderRead"
+                                }
+                            }
+                        }
+                    },
+                    "422": {
+                        "description": "Validation Error",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/HTTPValidationError"
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        "/v1/wellness/reminders/upcoming": {
+            "get": {
+                "tags": [
+                    "Wellness"
+                ],
+                "summary": "Get Upcoming",
+                "operationId": "get_upcoming_v1_wellness_reminders_upcoming_get",
+                "parameters": [
+                    {
+                        "name": "hours",
+                        "in": "query",
+                        "required": false,
+                        "schema": {
+                            "type": "integer",
+                            "maximum": 168,
+                            "minimum": 1,
+                            "default": 24,
+                            "title": "Hours"
+                        }
+                    },
+                    {
+                        "name": "X-Device-Id",
+                        "in": "header",
+                        "required": true,
+                        "description": "16\u201364 char alphanumeric+dash device identifier for guest auth.",
+                        "schema": {
+                            "type": "string",
+                            "pattern": "^[a-zA-Z0-9\\-]{16,64}$"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Successful Response",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "type": "array",
+                                    "items": {
+                                        "$ref": "#/components/schemas/UpcomingFire"
+                                    },
+                                    "title": "Response Get Upcoming V1 Wellness Reminders Upcoming Get"
+                                }
+                            }
+                        }
+                    },
+                    "422": {
+                        "description": "Validation Error",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/HTTPValidationError"
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        "/v1/wellness/reminders/{reminder_id}": {
+            "patch": {
+                "tags": [
+                    "Wellness"
+                ],
+                "summary": "Update Reminder",
+                "operationId": "update_reminder_v1_wellness_reminders__reminder_id__patch",
+                "parameters": [
+                    {
+                        "name": "reminder_id",
+                        "in": "path",
+                        "required": true,
+                        "schema": {
+                            "type": "string",
+                            "format": "uuid",
+                            "title": "Reminder Id"
+                        }
+                    },
+                    {
+                        "name": "X-Device-Id",
+                        "in": "header",
+                        "required": true,
+                        "description": "16\u201364 char alphanumeric+dash device identifier for guest auth.",
+                        "schema": {
+                            "type": "string",
+                            "pattern": "^[a-zA-Z0-9\\-]{16,64}$"
+                        }
+                    }
+                ],
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "$ref": "#/components/schemas/ReminderUpdate"
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "200": {
+                        "description": "Successful Response",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/ReminderRead"
+                                }
+                            }
+                        }
+                    },
+                    "422": {
+                        "description": "Validation Error",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/HTTPValidationError"
+                                }
+                            }
+                        }
+                    }
+                }
+            },
+            "delete": {
+                "tags": [
+                    "Wellness"
+                ],
+                "summary": "Delete Reminder",
+                "description": "Soft-delete: active \u2192 false. Row is kept for audit history.",
+                "operationId": "delete_reminder_v1_wellness_reminders__reminder_id__delete",
+                "parameters": [
+                    {
+                        "name": "reminder_id",
+                        "in": "path",
+                        "required": true,
+                        "schema": {
+                            "type": "string",
+                            "format": "uuid",
+                            "title": "Reminder Id"
+                        }
+                    },
+                    {
+                        "name": "X-Device-Id",
+                        "in": "header",
+                        "required": true,
+                        "description": "16\u201364 char alphanumeric+dash device identifier for guest auth.",
+                        "schema": {
+                            "type": "string",
+                            "pattern": "^[a-zA-Z0-9\\-]{16,64}$"
+                        }
+                    }
+                ],
+                "responses": {
+                    "204": {
+                        "description": "Successful Response"
+                    },
+                    "422": {
+                        "description": "Validation Error",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/HTTPValidationError"
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        "/v1/wellness/logs/": {
+            "post": {
+                "tags": [
+                    "Wellness"
+                ],
+                "summary": "Create Log Entry",
+                "operationId": "create_log_entry_v1_wellness_logs__post",
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "$ref": "#/components/schemas/LogEntryCreate"
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "201": {
+                        "description": "Successful Response",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/LogEntryRead"
+                                }
+                            }
+                        }
+                    },
+                    "422": {
+                        "description": "Validation Error",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/HTTPValidationError"
+                                }
+                            }
+                        }
+                    }
+                },
+                "parameters": [
+                    {
+                        "name": "X-Device-Id",
+                        "in": "header",
+                        "required": true,
+                        "description": "16\u201364 char alphanumeric+dash device identifier for guest auth.",
+                        "schema": {
+                            "type": "string",
+                            "pattern": "^[a-zA-Z0-9\\-]{16,64}$"
+                        }
+                    }
+                ]
+            },
+            "get": {
+                "tags": [
+                    "Wellness"
+                ],
+                "summary": "List Log Entries",
+                "operationId": "list_log_entries_v1_wellness_logs__get",
+                "parameters": [
+                    {
+                        "name": "tracked_item_id",
+                        "in": "query",
+                        "required": false,
+                        "schema": {
+                            "anyOf": [
+                                {
+                                    "type": "string",
+                                    "format": "uuid"
+                                },
+                                {
+                                    "type": "null"
+                                }
+                            ],
+                            "title": "Tracked Item Id"
+                        }
+                    },
+                    {
+                        "name": "action",
+                        "in": "query",
+                        "required": false,
+                        "schema": {
+                            "anyOf": [
+                                {
+                                    "type": "string"
+                                },
+                                {
+                                    "type": "null"
+                                }
+                            ],
+                            "title": "Action"
+                        }
+                    },
+                    {
+                        "name": "from",
+                        "in": "query",
+                        "required": false,
+                        "schema": {
+                            "anyOf": [
+                                {
+                                    "type": "string",
+                                    "format": "date-time"
+                                },
+                                {
+                                    "type": "null"
+                                }
+                            ],
+                            "title": "From"
+                        }
+                    },
+                    {
+                        "name": "to",
+                        "in": "query",
+                        "required": false,
+                        "schema": {
+                            "anyOf": [
+                                {
+                                    "type": "string",
+                                    "format": "date-time"
+                                },
+                                {
+                                    "type": "null"
+                                }
+                            ],
+                            "title": "To"
+                        }
+                    },
+                    {
+                        "name": "limit",
+                        "in": "query",
+                        "required": false,
+                        "schema": {
+                            "type": "integer",
+                            "maximum": 200,
+                            "minimum": 1,
+                            "default": 50,
+                            "title": "Limit"
+                        }
+                    },
+                    {
+                        "name": "cursor",
+                        "in": "query",
+                        "required": false,
+                        "schema": {
+                            "anyOf": [
+                                {
+                                    "type": "string"
+                                },
+                                {
+                                    "type": "null"
+                                }
+                            ],
+                            "title": "Cursor"
+                        }
+                    },
+                    {
+                        "name": "X-Device-Id",
+                        "in": "header",
+                        "required": true,
+                        "description": "16\u201364 char alphanumeric+dash device identifier for guest auth.",
+                        "schema": {
+                            "type": "string",
+                            "pattern": "^[a-zA-Z0-9\\-]{16,64}$"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Successful Response",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "type": "array",
+                                    "items": {
+                                        "$ref": "#/components/schemas/LogEntryRead"
+                                    },
+                                    "title": "Response List Log Entries V1 Wellness Logs  Get"
+                                }
+                            }
+                        }
+                    },
+                    "422": {
+                        "description": "Validation Error",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/HTTPValidationError"
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        "/v1/wellness/measurements/": {
+            "post": {
+                "tags": [
+                    "Wellness"
+                ],
+                "summary": "Create Measurement",
+                "operationId": "create_measurement_v1_wellness_measurements__post",
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "$ref": "#/components/schemas/MeasurementCreate"
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "201": {
+                        "description": "Successful Response",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/MeasurementRead"
+                                }
+                            }
+                        }
+                    },
+                    "422": {
+                        "description": "Validation Error",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/HTTPValidationError"
+                                }
+                            }
+                        }
+                    }
+                },
+                "parameters": [
+                    {
+                        "name": "X-Device-Id",
+                        "in": "header",
+                        "required": true,
+                        "description": "16\u201364 char alphanumeric+dash device identifier for guest auth.",
+                        "schema": {
+                            "type": "string",
+                            "pattern": "^[a-zA-Z0-9\\-]{16,64}$"
+                        }
+                    }
+                ]
+            },
+            "get": {
+                "tags": [
+                    "Wellness"
+                ],
+                "summary": "List Measurements",
+                "operationId": "list_measurements_v1_wellness_measurements__get",
+                "parameters": [
+                    {
+                        "name": "type",
+                        "in": "query",
+                        "required": false,
+                        "schema": {
+                            "anyOf": [
+                                {
+                                    "enum": [
+                                        "weight",
+                                        "bp_systolic",
+                                        "bp_diastolic",
+                                        "heart_rate",
+                                        "fasting_glucose",
+                                        "hba1c",
+                                        "body_temp",
+                                        "steps"
+                                    ],
+                                    "type": "string"
+                                },
+                                {
+                                    "type": "null"
+                                }
+                            ],
+                            "title": "Type"
+                        }
+                    },
+                    {
+                        "name": "from",
+                        "in": "query",
+                        "required": false,
+                        "schema": {
+                            "anyOf": [
+                                {
+                                    "type": "string",
+                                    "format": "date-time"
+                                },
+                                {
+                                    "type": "null"
+                                }
+                            ],
+                            "title": "From"
+                        }
+                    },
+                    {
+                        "name": "to",
+                        "in": "query",
+                        "required": false,
+                        "schema": {
+                            "anyOf": [
+                                {
+                                    "type": "string",
+                                    "format": "date-time"
+                                },
+                                {
+                                    "type": "null"
+                                }
+                            ],
+                            "title": "To"
+                        }
+                    },
+                    {
+                        "name": "limit",
+                        "in": "query",
+                        "required": false,
+                        "schema": {
+                            "type": "integer",
+                            "maximum": 200,
+                            "minimum": 1,
+                            "default": 50,
+                            "title": "Limit"
+                        }
+                    },
+                    {
+                        "name": "cursor",
+                        "in": "query",
+                        "required": false,
+                        "schema": {
+                            "anyOf": [
+                                {
+                                    "type": "string"
+                                },
+                                {
+                                    "type": "null"
+                                }
+                            ],
+                            "title": "Cursor"
+                        }
+                    },
+                    {
+                        "name": "X-Device-Id",
+                        "in": "header",
+                        "required": true,
+                        "description": "16\u201364 char alphanumeric+dash device identifier for guest auth.",
+                        "schema": {
+                            "type": "string",
+                            "pattern": "^[a-zA-Z0-9\\-]{16,64}$"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Successful Response",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "type": "array",
+                                    "items": {
+                                        "$ref": "#/components/schemas/MeasurementRead"
+                                    },
+                                    "title": "Response List Measurements V1 Wellness Measurements  Get"
+                                }
+                            }
+                        }
+                    },
+                    "422": {
+                        "description": "Validation Error",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/HTTPValidationError"
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        "/v1/wellness/measurements/{measurement_id}": {
+            "get": {
+                "tags": [
+                    "Wellness"
+                ],
+                "summary": "Get Measurement",
+                "operationId": "get_measurement_v1_wellness_measurements__measurement_id__get",
+                "parameters": [
+                    {
+                        "name": "measurement_id",
+                        "in": "path",
+                        "required": true,
+                        "schema": {
+                            "type": "string",
+                            "format": "uuid",
+                            "title": "Measurement Id"
+                        }
+                    },
+                    {
+                        "name": "X-Device-Id",
+                        "in": "header",
+                        "required": true,
+                        "description": "16\u201364 char alphanumeric+dash device identifier for guest auth.",
+                        "schema": {
+                            "type": "string",
+                            "pattern": "^[a-zA-Z0-9\\-]{16,64}$"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Successful Response",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/MeasurementRead"
+                                }
+                            }
+                        }
+                    },
+                    "422": {
+                        "description": "Validation Error",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/HTTPValidationError"
+                                }
+                            }
+                        }
+                    }
+                }
+            },
+            "patch": {
+                "tags": [
+                    "Wellness"
+                ],
+                "summary": "Update Measurement",
+                "operationId": "update_measurement_v1_wellness_measurements__measurement_id__patch",
+                "parameters": [
+                    {
+                        "name": "measurement_id",
+                        "in": "path",
+                        "required": true,
+                        "schema": {
+                            "type": "string",
+                            "format": "uuid",
+                            "title": "Measurement Id"
+                        }
+                    },
+                    {
+                        "name": "X-Device-Id",
+                        "in": "header",
+                        "required": true,
+                        "description": "16\u201364 char alphanumeric+dash device identifier for guest auth.",
+                        "schema": {
+                            "type": "string",
+                            "pattern": "^[a-zA-Z0-9\\-]{16,64}$"
+                        }
+                    }
+                ],
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "$ref": "#/components/schemas/MeasurementUpdate"
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "200": {
+                        "description": "Successful Response",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/MeasurementRead"
+                                }
+                            }
+                        }
+                    },
+                    "422": {
+                        "description": "Validation Error",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/HTTPValidationError"
+                                }
+                            }
+                        }
+                    }
+                }
+            },
+            "delete": {
+                "tags": [
+                    "Wellness"
+                ],
+                "summary": "Delete Measurement",
+                "description": "Hard delete: user-corrected readings are not adherence history.",
+                "operationId": "delete_measurement_v1_wellness_measurements__measurement_id__delete",
+                "parameters": [
+                    {
+                        "name": "measurement_id",
+                        "in": "path",
+                        "required": true,
+                        "schema": {
+                            "type": "string",
+                            "format": "uuid",
+                            "title": "Measurement Id"
+                        }
+                    },
+                    {
+                        "name": "X-Device-Id",
+                        "in": "header",
+                        "required": true,
+                        "description": "16\u201364 char alphanumeric+dash device identifier for guest auth.",
+                        "schema": {
+                            "type": "string",
+                            "pattern": "^[a-zA-Z0-9\\-]{16,64}$"
+                        }
+                    }
+                ],
+                "responses": {
+                    "204": {
+                        "description": "Successful Response"
+                    },
+                    "422": {
+                        "description": "Validation Error",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/HTTPValidationError"
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        "/v1/wellness/lab-reports/": {
+            "post": {
+                "tags": [
+                    "Wellness"
+                ],
+                "summary": "Upload Lab Report",
+                "operationId": "upload_lab_report_v1_wellness_lab_reports__post",
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "multipart/form-data": {
+                            "schema": {
+                                "$ref": "#/components/schemas/Body_upload_lab_report_v1_wellness_lab_reports__post"
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "201": {
+                        "description": "Successful Response",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/LabReportRead"
+                                }
+                            }
+                        }
+                    },
+                    "422": {
+                        "description": "Validation Error",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/HTTPValidationError"
+                                }
+                            }
+                        }
+                    }
+                },
+                "parameters": [
+                    {
+                        "name": "X-Device-Id",
+                        "in": "header",
+                        "required": true,
+                        "description": "16\u201364 char alphanumeric+dash device identifier for guest auth.",
+                        "schema": {
+                            "type": "string",
+                            "pattern": "^[a-zA-Z0-9\\-]{16,64}$"
+                        }
+                    }
+                ]
+            },
+            "get": {
+                "tags": [
+                    "Wellness"
+                ],
+                "summary": "List Lab Reports",
+                "operationId": "list_lab_reports_v1_wellness_lab_reports__get",
+                "parameters": [
+                    {
+                        "name": "limit",
+                        "in": "query",
+                        "required": false,
+                        "schema": {
+                            "type": "integer",
+                            "maximum": 200,
+                            "minimum": 1,
+                            "default": 50,
+                            "title": "Limit"
+                        }
+                    },
+                    {
+                        "name": "cursor",
+                        "in": "query",
+                        "required": false,
+                        "schema": {
+                            "anyOf": [
+                                {
+                                    "type": "string"
+                                },
+                                {
+                                    "type": "null"
+                                }
+                            ],
+                            "title": "Cursor"
+                        }
+                    },
+                    {
+                        "name": "X-Device-Id",
+                        "in": "header",
+                        "required": true,
+                        "description": "16\u201364 char alphanumeric+dash device identifier for guest auth.",
+                        "schema": {
+                            "type": "string",
+                            "pattern": "^[a-zA-Z0-9\\-]{16,64}$"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Successful Response",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "type": "array",
+                                    "items": {
+                                        "$ref": "#/components/schemas/LabReportRead"
+                                    },
+                                    "title": "Response List Lab Reports V1 Wellness Lab Reports  Get"
+                                }
+                            }
+                        }
+                    },
+                    "422": {
+                        "description": "Validation Error",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/HTTPValidationError"
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        "/v1/wellness/lab-reports/{report_id}": {
+            "get": {
+                "tags": [
+                    "Wellness"
+                ],
+                "summary": "Get Lab Report",
+                "operationId": "get_lab_report_v1_wellness_lab_reports__report_id__get",
+                "parameters": [
+                    {
+                        "name": "report_id",
+                        "in": "path",
+                        "required": true,
+                        "schema": {
+                            "type": "string",
+                            "format": "uuid",
+                            "title": "Report Id"
+                        }
+                    },
+                    {
+                        "name": "X-Device-Id",
+                        "in": "header",
+                        "required": true,
+                        "description": "16\u201364 char alphanumeric+dash device identifier for guest auth.",
+                        "schema": {
+                            "type": "string",
+                            "pattern": "^[a-zA-Z0-9\\-]{16,64}$"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Successful Response",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/LabReportRead"
+                                }
+                            }
+                        }
+                    },
+                    "422": {
+                        "description": "Validation Error",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/HTTPValidationError"
+                                }
+                            }
+                        }
+                    }
+                }
+            },
+            "patch": {
+                "tags": [
+                    "Wellness"
+                ],
+                "summary": "Update Lab Report",
+                "operationId": "update_lab_report_v1_wellness_lab_reports__report_id__patch",
+                "parameters": [
+                    {
+                        "name": "report_id",
+                        "in": "path",
+                        "required": true,
+                        "schema": {
+                            "type": "string",
+                            "format": "uuid",
+                            "title": "Report Id"
+                        }
+                    },
+                    {
+                        "name": "X-Device-Id",
+                        "in": "header",
+                        "required": true,
+                        "description": "16\u201364 char alphanumeric+dash device identifier for guest auth.",
+                        "schema": {
+                            "type": "string",
+                            "pattern": "^[a-zA-Z0-9\\-]{16,64}$"
+                        }
+                    }
+                ],
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "$ref": "#/components/schemas/LabReportUpdate"
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "200": {
+                        "description": "Successful Response",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/LabReportRead"
+                                }
+                            }
+                        }
+                    },
+                    "422": {
+                        "description": "Validation Error",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/HTTPValidationError"
+                                }
+                            }
+                        }
+                    }
+                }
+            },
+            "delete": {
+                "tags": [
+                    "Wellness"
+                ],
+                "summary": "Delete Lab Report",
+                "description": "Soft delete: status \u2192 'deleted'. File is kept; a cleanup job sweeps later.",
+                "operationId": "delete_lab_report_v1_wellness_lab_reports__report_id__delete",
+                "parameters": [
+                    {
+                        "name": "report_id",
+                        "in": "path",
+                        "required": true,
+                        "schema": {
+                            "type": "string",
+                            "format": "uuid",
+                            "title": "Report Id"
+                        }
+                    },
+                    {
+                        "name": "X-Device-Id",
+                        "in": "header",
+                        "required": true,
+                        "description": "16\u201364 char alphanumeric+dash device identifier for guest auth.",
+                        "schema": {
+                            "type": "string",
+                            "pattern": "^[a-zA-Z0-9\\-]{16,64}$"
+                        }
+                    }
+                ],
+                "responses": {
+                    "204": {
+                        "description": "Successful Response"
+                    },
+                    "422": {
+                        "description": "Validation Error",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/HTTPValidationError"
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        "/v1/wellness/lab-reports/{report_id}/file": {
+            "get": {
+                "tags": [
+                    "Wellness"
+                ],
+                "summary": "Download Lab File",
+                "operationId": "download_lab_file_v1_wellness_lab_reports__report_id__file_get",
+                "parameters": [
+                    {
+                        "name": "report_id",
+                        "in": "path",
+                        "required": true,
+                        "schema": {
+                            "type": "string",
+                            "format": "uuid",
+                            "title": "Report Id"
+                        }
+                    },
+                    {
+                        "name": "X-Device-Id",
+                        "in": "header",
+                        "required": true,
+                        "description": "16\u201364 char alphanumeric+dash device identifier for guest auth.",
+                        "schema": {
+                            "type": "string",
+                            "pattern": "^[a-zA-Z0-9\\-]{16,64}$"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Successful Response",
+                        "content": {
+                            "application/json": {
+                                "schema": {}
+                            }
+                        }
+                    },
+                    "422": {
+                        "description": "Validation Error",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/HTTPValidationError"
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        }
+    },
+    "components": {
+        "schemas": {
+            "ActiveWindow": {
+                "properties": {
+                    "start": {
+                        "type": "string",
+                        "title": "Start"
+                    },
+                    "end": {
+                        "type": "string",
+                        "title": "End"
+                    }
+                },
+                "type": "object",
+                "required": [
+                    "start",
+                    "end"
+                ],
+                "title": "ActiveWindow"
+            },
+            "Body_upload_lab_report_v1_wellness_lab_reports__post": {
+                "properties": {
+                    "file": {
+                        "type": "string",
+                        "format": "binary",
+                        "title": "File"
+                    },
+                    "metadata": {
+                        "type": "string",
+                        "title": "Metadata"
+                    }
+                },
+                "type": "object",
+                "required": [
+                    "file",
+                    "metadata"
+                ],
+                "title": "Body_upload_lab_report_v1_wellness_lab_reports__post"
+            },
+            "CustomItemCreate": {
+                "properties": {
+                    "name": {
+                        "type": "string",
+                        "title": "Name"
+                    },
+                    "start_date": {
+                        "type": "string",
+                        "format": "date",
+                        "title": "Start Date"
+                    },
+                    "end_date": {
+                        "anyOf": [
+                            {
+                                "type": "string",
+                                "format": "date"
+                            },
+                            {
+                                "type": "null"
+                            }
+                        ],
+                        "title": "End Date"
+                    },
+                    "category": {
+                        "type": "string",
+                        "const": "custom",
+                        "title": "Category"
+                    },
+                    "metadata": {
+                        "$ref": "#/components/schemas/CustomMeta"
+                    }
+                },
+                "type": "object",
+                "required": [
+                    "name",
+                    "start_date",
+                    "category",
+                    "metadata"
+                ],
+                "title": "CustomItemCreate"
+            },
+            "CustomMeta": {
+                "properties": {
+                    "title": {
+                        "type": "string",
+                        "title": "Title"
+                    },
+                    "notes": {
+                        "anyOf": [
+                            {
+                                "type": "string"
+                            },
+                            {
+                                "type": "null"
+                            }
+                        ],
+                        "title": "Notes"
+                    }
+                },
+                "type": "object",
+                "required": [
+                    "title"
+                ],
+                "title": "CustomMeta"
+            },
+            "HTTPValidationError": {
+                "properties": {
+                    "detail": {
+                        "items": {
+                            "$ref": "#/components/schemas/ValidationError"
+                        },
+                        "type": "array",
+                        "title": "Detail"
+                    }
+                },
+                "type": "object",
+                "title": "HTTPValidationError"
+            },
+            "IntervalSchedule": {
+                "properties": {
+                    "type": {
+                        "type": "string",
+                        "const": "interval",
+                        "title": "Type"
+                    },
+                    "interval_minutes": {
+                        "type": "integer",
+                        "maximum": 1440.0,
+                        "exclusiveMinimum": 0.0,
+                        "title": "Interval Minutes"
+                    },
+                    "active_window": {
+                        "$ref": "#/components/schemas/ActiveWindow"
+                    },
+                    "days_of_week": {
+                        "items": {
+                            "type": "string",
+                            "enum": [
+                                "mon",
+                                "tue",
+                                "wed",
+                                "thu",
+                                "fri",
+                                "sat",
+                                "sun"
+                            ]
+                        },
+                        "type": "array",
+                        "minItems": 1,
+                        "title": "Days Of Week"
+                    },
+                    "timezone": {
+                        "type": "string",
+                        "title": "Timezone"
+                    }
+                },
+                "type": "object",
+                "required": [
+                    "type",
+                    "interval_minutes",
+                    "active_window",
+                    "days_of_week",
+                    "timezone"
+                ],
+                "title": "IntervalSchedule"
+            },
+            "LabReportRead": {
+                "properties": {
+                    "id": {
+                        "type": "string",
+                        "format": "uuid",
+                        "title": "Id"
+                    },
+                    "user_id": {
+                        "type": "string",
+                        "format": "uuid",
+                        "title": "User Id"
+                    },
+                    "report_date": {
+                        "type": "string",
+                        "format": "date",
+                        "title": "Report Date"
+                    },
+                    "lab_name": {
+                        "anyOf": [
+                            {
+                                "type": "string"
+                            },
+                            {
+                                "type": "null"
+                            }
+                        ],
+                        "title": "Lab Name"
+                    },
+                    "file_url": {
+                        "anyOf": [
+                            {
+                                "type": "string"
+                            },
+                            {
+                                "type": "null"
+                            }
+                        ],
+                        "title": "File Url"
+                    },
+                    "file_mime": {
+                        "anyOf": [
+                            {
+                                "type": "string"
+                            },
+                            {
+                                "type": "null"
+                            }
+                        ],
+                        "title": "File Mime"
+                    },
+                    "parsed": {
+                        "items": {
+                            "$ref": "#/components/schemas/ParsedTest"
+                        },
+                        "type": "array",
+                        "title": "Parsed"
+                    },
+                    "source": {
+                        "type": "string",
+                        "title": "Source"
+                    },
+                    "source_ref": {
+                        "anyOf": [
+                            {
+                                "type": "string"
+                            },
+                            {
+                                "type": "null"
+                            }
+                        ],
+                        "title": "Source Ref"
+                    },
+                    "note": {
+                        "anyOf": [
+                            {
+                                "type": "string"
+                            },
+                            {
+                                "type": "null"
+                            }
+                        ],
+                        "title": "Note"
+                    },
+                    "status": {
+                        "type": "string",
+                        "title": "Status"
+                    },
+                    "created_at": {
+                        "type": "string",
+                        "format": "date-time",
+                        "title": "Created At"
+                    },
+                    "updated_at": {
+                        "type": "string",
+                        "format": "date-time",
+                        "title": "Updated At"
+                    },
+                    "signed_url": {
+                        "anyOf": [
+                            {
+                                "type": "string"
+                            },
+                            {
+                                "type": "null"
+                            }
+                        ],
+                        "title": "Signed Url"
+                    }
+                },
+                "type": "object",
+                "required": [
+                    "id",
+                    "user_id",
+                    "report_date",
+                    "lab_name",
+                    "file_url",
+                    "file_mime",
+                    "parsed",
+                    "source",
+                    "source_ref",
+                    "note",
+                    "status",
+                    "created_at",
+                    "updated_at"
+                ],
+                "title": "LabReportRead"
+            },
+            "LabReportUpdate": {
+                "properties": {
+                    "report_date": {
+                        "anyOf": [
+                            {
+                                "type": "string",
+                                "format": "date"
+                            },
+                            {
+                                "type": "null"
+                            }
+                        ],
+                        "title": "Report Date"
+                    },
+                    "lab_name": {
+                        "anyOf": [
+                            {
+                                "type": "string"
+                            },
+                            {
+                                "type": "null"
+                            }
+                        ],
+                        "title": "Lab Name"
+                    },
+                    "parsed": {
+                        "anyOf": [
+                            {
+                                "items": {
+                                    "$ref": "#/components/schemas/ParsedTest"
+                                },
+                                "type": "array"
+                            },
+                            {
+                                "type": "null"
+                            }
+                        ],
+                        "title": "Parsed"
+                    },
+                    "note": {
+                        "anyOf": [
+                            {
+                                "type": "string"
+                            },
+                            {
+                                "type": "null"
+                            }
+                        ],
+                        "title": "Note"
+                    }
+                },
+                "type": "object",
+                "title": "LabReportUpdate"
+            },
+            "LogEntryCreate": {
+                "properties": {
+                    "tracked_item_id": {
+                        "type": "string",
+                        "format": "uuid",
+                        "title": "Tracked Item Id"
+                    },
+                    "action": {
+                        "type": "string",
+                        "enum": [
+                            "taken",
+                            "skipped",
+                            "snoozed",
+                            "logged_value",
+                            "acknowledged"
+                        ],
+                        "title": "Action"
+                    },
+                    "occurred_at": {
+                        "type": "string",
+                        "format": "date-time",
+                        "title": "Occurred At"
+                    },
+                    "reminder_id": {
+                        "anyOf": [
+                            {
+                                "type": "string",
+                                "format": "uuid"
+                            },
+                            {
+                                "type": "null"
+                            }
+                        ],
+                        "title": "Reminder Id"
+                    },
+                    "fire_key": {
+                        "anyOf": [
+                            {
+                                "type": "string"
+                            },
+                            {
+                                "type": "null"
+                            }
+                        ],
+                        "title": "Fire Key"
+                    },
+                    "value": {
+                        "additionalProperties": true,
+                        "type": "object",
+                        "title": "Value"
+                    },
+                    "note": {
+                        "anyOf": [
+                            {
+                                "type": "string"
+                            },
+                            {
+                                "type": "null"
+                            }
+                        ],
+                        "title": "Note"
+                    }
+                },
+                "type": "object",
+                "required": [
+                    "tracked_item_id",
+                    "action",
+                    "occurred_at"
+                ],
+                "title": "LogEntryCreate"
+            },
+            "LogEntryRead": {
+                "properties": {
+                    "id": {
+                        "type": "string",
+                        "format": "uuid",
+                        "title": "Id"
+                    },
+                    "user_id": {
+                        "type": "string",
+                        "format": "uuid",
+                        "title": "User Id"
+                    },
+                    "tracked_item_id": {
+                        "type": "string",
+                        "format": "uuid",
+                        "title": "Tracked Item Id"
+                    },
+                    "reminder_id": {
+                        "anyOf": [
+                            {
+                                "type": "string",
+                                "format": "uuid"
+                            },
+                            {
+                                "type": "null"
+                            }
+                        ],
+                        "title": "Reminder Id"
+                    },
+                    "fire_key": {
+                        "anyOf": [
+                            {
+                                "type": "string"
+                            },
+                            {
+                                "type": "null"
+                            }
+                        ],
+                        "title": "Fire Key"
+                    },
+                    "action": {
+                        "type": "string",
+                        "enum": [
+                            "taken",
+                            "skipped",
+                            "snoozed",
+                            "logged_value",
+                            "acknowledged"
+                        ],
+                        "title": "Action"
+                    },
+                    "value": {
+                        "additionalProperties": true,
+                        "type": "object",
+                        "title": "Value"
+                    },
+                    "note": {
+                        "anyOf": [
+                            {
+                                "type": "string"
+                            },
+                            {
+                                "type": "null"
+                            }
+                        ],
+                        "title": "Note"
+                    },
+                    "occurred_at": {
+                        "type": "string",
+                        "format": "date-time",
+                        "title": "Occurred At"
+                    },
+                    "source": {
+                        "type": "string",
+                        "title": "Source"
+                    },
+                    "created_at": {
+                        "type": "string",
+                        "format": "date-time",
+                        "title": "Created At"
+                    }
+                },
+                "type": "object",
+                "required": [
+                    "id",
+                    "user_id",
+                    "tracked_item_id",
+                    "reminder_id",
+                    "fire_key",
+                    "action",
+                    "value",
+                    "note",
+                    "occurred_at",
+                    "source",
+                    "created_at"
+                ],
+                "title": "LogEntryRead"
+            },
+            "MealItemCreate": {
+                "properties": {
+                    "name": {
+                        "type": "string",
+                        "title": "Name"
+                    },
+                    "start_date": {
+                        "type": "string",
+                        "format": "date",
+                        "title": "Start Date"
+                    },
+                    "end_date": {
+                        "anyOf": [
+                            {
+                                "type": "string",
+                                "format": "date"
+                            },
+                            {
+                                "type": "null"
+                            }
+                        ],
+                        "title": "End Date"
+                    },
+                    "category": {
+                        "type": "string",
+                        "const": "meal",
+                        "title": "Category"
+                    },
+                    "metadata": {
+                        "$ref": "#/components/schemas/MealMeta"
+                    }
+                },
+                "type": "object",
+                "required": [
+                    "name",
+                    "start_date",
+                    "category",
+                    "metadata"
+                ],
+                "title": "MealItemCreate"
+            },
+            "MealMeta": {
+                "properties": {
+                    "meal_name": {
+                        "type": "string",
+                        "title": "Meal Name"
+                    },
+                    "notes": {
+                        "anyOf": [
+                            {
+                                "type": "string"
+                            },
+                            {
+                                "type": "null"
+                            }
+                        ],
+                        "title": "Notes"
+                    }
+                },
+                "type": "object",
+                "required": [
+                    "meal_name"
+                ],
+                "title": "MealMeta"
+            },
+            "MeasurementCreate": {
+                "properties": {
+                    "type": {
+                        "type": "string",
+                        "enum": [
+                            "weight",
+                            "bp_systolic",
+                            "bp_diastolic",
+                            "heart_rate",
+                            "fasting_glucose",
+                            "hba1c",
+                            "body_temp",
+                            "steps"
+                        ],
+                        "title": "Type"
+                    },
+                    "value": {
+                        "anyOf": [
+                            {
+                                "type": "number"
+                            },
+                            {
+                                "type": "string",
+                                "pattern": "^(?!^[-+.]*$)[+-]?0*\\d*\\.?\\d*$"
+                            }
+                        ],
+                        "title": "Value"
+                    },
+                    "unit": {
+                        "type": "string",
+                        "title": "Unit"
+                    },
+                    "measured_at": {
+                        "type": "string",
+                        "format": "date-time",
+                        "title": "Measured At"
+                    },
+                    "reference_range": {
+                        "anyOf": [
+                            {
+                                "additionalProperties": true,
+                                "type": "object"
+                            },
+                            {
+                                "type": "null"
+                            }
+                        ],
+                        "title": "Reference Range"
+                    },
+                    "note": {
+                        "anyOf": [
+                            {
+                                "type": "string"
+                            },
+                            {
+                                "type": "null"
+                            }
+                        ],
+                        "title": "Note"
+                    }
+                },
+                "type": "object",
+                "required": [
+                    "type",
+                    "value",
+                    "unit",
+                    "measured_at"
+                ],
+                "title": "MeasurementCreate"
+            },
+            "MeasurementRead": {
+                "properties": {
+                    "id": {
+                        "type": "string",
+                        "format": "uuid",
+                        "title": "Id"
+                    },
+                    "user_id": {
+                        "type": "string",
+                        "format": "uuid",
+                        "title": "User Id"
+                    },
+                    "type": {
+                        "type": "string",
+                        "enum": [
+                            "weight",
+                            "bp_systolic",
+                            "bp_diastolic",
+                            "heart_rate",
+                            "fasting_glucose",
+                            "hba1c",
+                            "body_temp",
+                            "steps"
+                        ],
+                        "title": "Type"
+                    },
+                    "value": {
+                        "type": "string",
+                        "pattern": "^(?!^[-+.]*$)[+-]?0*\\d*\\.?\\d*$",
+                        "title": "Value"
+                    },
+                    "unit": {
+                        "type": "string",
+                        "title": "Unit"
+                    },
+                    "measured_at": {
+                        "type": "string",
+                        "format": "date-time",
+                        "title": "Measured At"
+                    },
+                    "reference_range": {
+                        "anyOf": [
+                            {
+                                "additionalProperties": true,
+                                "type": "object"
+                            },
+                            {
+                                "type": "null"
+                            }
+                        ],
+                        "title": "Reference Range"
+                    },
+                    "source": {
+                        "type": "string",
+                        "title": "Source"
+                    },
+                    "source_ref": {
+                        "anyOf": [
+                            {
+                                "type": "string"
+                            },
+                            {
+                                "type": "null"
+                            }
+                        ],
+                        "title": "Source Ref"
+                    },
+                    "note": {
+                        "anyOf": [
+                            {
+                                "type": "string"
+                            },
+                            {
+                                "type": "null"
+                            }
+                        ],
+                        "title": "Note"
+                    },
+                    "created_at": {
+                        "type": "string",
+                        "format": "date-time",
+                        "title": "Created At"
+                    }
+                },
+                "type": "object",
+                "required": [
+                    "id",
+                    "user_id",
+                    "type",
+                    "value",
+                    "unit",
+                    "measured_at",
+                    "reference_range",
+                    "source",
+                    "source_ref",
+                    "note",
+                    "created_at"
+                ],
+                "title": "MeasurementRead"
+            },
+            "MeasurementUpdate": {
+                "properties": {
+                    "type": {
+                        "anyOf": [
+                            {
+                                "type": "string",
+                                "enum": [
+                                    "weight",
+                                    "bp_systolic",
+                                    "bp_diastolic",
+                                    "heart_rate",
+                                    "fasting_glucose",
+                                    "hba1c",
+                                    "body_temp",
+                                    "steps"
+                                ]
+                            },
+                            {
+                                "type": "null"
+                            }
+                        ],
+                        "title": "Type"
+                    },
+                    "value": {
+                        "anyOf": [
+                            {
+                                "type": "number"
+                            },
+                            {
+                                "type": "string",
+                                "pattern": "^(?!^[-+.]*$)[+-]?0*\\d*\\.?\\d*$"
+                            },
+                            {
+                                "type": "null"
+                            }
+                        ],
+                        "title": "Value"
+                    },
+                    "unit": {
+                        "anyOf": [
+                            {
+                                "type": "string"
+                            },
+                            {
+                                "type": "null"
+                            }
+                        ],
+                        "title": "Unit"
+                    },
+                    "measured_at": {
+                        "anyOf": [
+                            {
+                                "type": "string",
+                                "format": "date-time"
+                            },
+                            {
+                                "type": "null"
+                            }
+                        ],
+                        "title": "Measured At"
+                    },
+                    "reference_range": {
+                        "anyOf": [
+                            {
+                                "additionalProperties": true,
+                                "type": "object"
+                            },
+                            {
+                                "type": "null"
+                            }
+                        ],
+                        "title": "Reference Range"
+                    },
+                    "note": {
+                        "anyOf": [
+                            {
+                                "type": "string"
+                            },
+                            {
+                                "type": "null"
+                            }
+                        ],
+                        "title": "Note"
+                    }
+                },
+                "type": "object",
+                "title": "MeasurementUpdate"
+            },
+            "MedicationItemCreate": {
+                "properties": {
+                    "name": {
+                        "type": "string",
+                        "title": "Name"
+                    },
+                    "start_date": {
+                        "type": "string",
+                        "format": "date",
+                        "title": "Start Date"
+                    },
+                    "end_date": {
+                        "anyOf": [
+                            {
+                                "type": "string",
+                                "format": "date"
+                            },
+                            {
+                                "type": "null"
+                            }
+                        ],
+                        "title": "End Date"
+                    },
+                    "category": {
+                        "type": "string",
+                        "const": "medication",
+                        "title": "Category"
+                    },
+                    "metadata": {
+                        "$ref": "#/components/schemas/MedicationMeta"
+                    }
+                },
+                "type": "object",
+                "required": [
+                    "name",
+                    "start_date",
+                    "category",
+                    "metadata"
+                ],
+                "title": "MedicationItemCreate"
+            },
+            "MedicationMeta": {
+                "properties": {
+                    "drug_name": {
+                        "type": "string",
+                        "title": "Drug Name"
+                    },
+                    "dosage": {
+                        "type": "string",
+                        "title": "Dosage"
+                    },
+                    "form": {
+                        "type": "string",
+                        "enum": [
+                            "tablet",
+                            "capsule",
+                            "syrup",
+                            "injection",
+                            "other"
+                        ],
+                        "title": "Form"
+                    },
+                    "with_food": {
+                        "type": "boolean",
+                        "title": "With Food",
+                        "default": false
+                    },
+                    "instructions": {
+                        "anyOf": [
+                            {
+                                "type": "string"
+                            },
+                            {
+                                "type": "null"
+                            }
+                        ],
+                        "title": "Instructions"
+                    }
+                },
+                "type": "object",
+                "required": [
+                    "drug_name",
+                    "dosage",
+                    "form"
+                ],
+                "title": "MedicationMeta"
+            },
+            "ParsedTest": {
+                "properties": {
+                    "name": {
+                        "type": "string",
+                        "title": "Name"
+                    },
+                    "value": {
+                        "type": "string",
+                        "title": "Value"
+                    },
+                    "unit": {
+                        "type": "string",
+                        "title": "Unit"
+                    },
+                    "ref_low": {
+                        "anyOf": [
+                            {
+                                "type": "number"
+                            },
+                            {
+                                "type": "null"
+                            }
+                        ],
+                        "title": "Ref Low"
+                    },
+                    "ref_high": {
+                        "anyOf": [
+                            {
+                                "type": "number"
+                            },
+                            {
+                                "type": "null"
+                            }
+                        ],
+                        "title": "Ref High"
+                    },
+                    "flag": {
+                        "type": "string",
+                        "enum": [
+                            "normal",
+                            "low",
+                            "high",
+                            "critical"
+                        ],
+                        "title": "Flag"
+                    }
+                },
+                "type": "object",
+                "required": [
+                    "name",
+                    "value",
+                    "unit",
+                    "flag"
+                ],
+                "title": "ParsedTest"
+            },
+            "RecurringSchedule": {
+                "properties": {
+                    "type": {
+                        "type": "string",
+                        "const": "recurring",
+                        "title": "Type"
+                    },
+                    "times": {
+                        "items": {
+                            "type": "string"
+                        },
+                        "type": "array",
+                        "title": "Times"
+                    },
+                    "days_of_week": {
+                        "items": {
+                            "type": "string",
+                            "enum": [
+                                "mon",
+                                "tue",
+                                "wed",
+                                "thu",
+                                "fri",
+                                "sat",
+                                "sun"
+                            ]
+                        },
+                        "type": "array",
+                        "minItems": 1,
+                        "title": "Days Of Week"
+                    },
+                    "start_date": {
+                        "type": "string",
+                        "format": "date",
+                        "title": "Start Date"
+                    },
+                    "end_date": {
+                        "anyOf": [
+                            {
+                                "type": "string",
+                                "format": "date"
+                            },
+                            {
+                                "type": "null"
+                            }
+                        ],
+                        "title": "End Date"
+                    },
+                    "timezone": {
+                        "type": "string",
+                        "title": "Timezone"
+                    }
+                },
+                "type": "object",
+                "required": [
+                    "type",
+                    "times",
+                    "days_of_week",
+                    "start_date",
+                    "timezone"
+                ],
+                "title": "RecurringSchedule"
+            },
+            "ReminderCreate": {
+                "properties": {
+                    "schedule": {
+                        "oneOf": [
+                            {
+                                "$ref": "#/components/schemas/RecurringSchedule"
+                            },
+                            {
+                                "$ref": "#/components/schemas/IntervalSchedule"
+                            }
+                        ],
+                        "title": "Schedule",
+                        "discriminator": {
+                            "propertyName": "type",
+                            "mapping": {
+                                "interval": "#/components/schemas/IntervalSchedule",
+                                "recurring": "#/components/schemas/RecurringSchedule"
+                            }
+                        }
+                    },
+                    "message_template": {
+                        "type": "string",
+                        "title": "Message Template"
+                    },
+                    "channels": {
+                        "items": {
+                            "type": "string"
+                        },
+                        "type": "array",
+                        "title": "Channels"
+                    }
+                },
+                "type": "object",
+                "required": [
+                    "schedule",
+                    "message_template"
+                ],
+                "title": "ReminderCreate"
+            },
+            "ReminderRead": {
+                "properties": {
+                    "id": {
+                        "type": "string",
+                        "format": "uuid",
+                        "title": "Id"
+                    },
+                    "tracked_item_id": {
+                        "type": "string",
+                        "format": "uuid",
+                        "title": "Tracked Item Id"
+                    },
+                    "schedule": {
+                        "oneOf": [
+                            {
+                                "$ref": "#/components/schemas/RecurringSchedule"
+                            },
+                            {
+                                "$ref": "#/components/schemas/IntervalSchedule"
+                            }
+                        ],
+                        "title": "Schedule",
+                        "discriminator": {
+                            "propertyName": "type",
+                            "mapping": {
+                                "interval": "#/components/schemas/IntervalSchedule",
+                                "recurring": "#/components/schemas/RecurringSchedule"
+                            }
+                        }
+                    },
+                    "message_template": {
+                        "type": "string",
+                        "title": "Message Template"
+                    },
+                    "channels": {
+                        "items": {
+                            "type": "string"
+                        },
+                        "type": "array",
+                        "title": "Channels"
+                    },
+                    "active": {
+                        "type": "boolean",
+                        "title": "Active"
+                    },
+                    "created_at": {
+                        "type": "string",
+                        "format": "date-time",
+                        "title": "Created At"
+                    },
+                    "updated_at": {
+                        "type": "string",
+                        "format": "date-time",
+                        "title": "Updated At"
+                    }
+                },
+                "type": "object",
+                "required": [
+                    "id",
+                    "tracked_item_id",
+                    "schedule",
+                    "message_template",
+                    "channels",
+                    "active",
+                    "created_at",
+                    "updated_at"
+                ],
+                "title": "ReminderRead"
+            },
+            "ReminderUpdate": {
+                "properties": {
+                    "schedule": {
+                        "anyOf": [
+                            {
+                                "oneOf": [
+                                    {
+                                        "$ref": "#/components/schemas/RecurringSchedule"
+                                    },
+                                    {
+                                        "$ref": "#/components/schemas/IntervalSchedule"
+                                    }
+                                ],
+                                "discriminator": {
+                                    "propertyName": "type",
+                                    "mapping": {
+                                        "interval": "#/components/schemas/IntervalSchedule",
+                                        "recurring": "#/components/schemas/RecurringSchedule"
+                                    }
+                                }
+                            },
+                            {
+                                "type": "null"
+                            }
+                        ],
+                        "title": "Schedule"
+                    },
+                    "message_template": {
+                        "anyOf": [
+                            {
+                                "type": "string"
+                            },
+                            {
+                                "type": "null"
+                            }
+                        ],
+                        "title": "Message Template"
+                    },
+                    "channels": {
+                        "anyOf": [
+                            {
+                                "items": {
+                                    "type": "string"
+                                },
+                                "type": "array"
+                            },
+                            {
+                                "type": "null"
+                            }
+                        ],
+                        "title": "Channels"
+                    },
+                    "active": {
+                        "anyOf": [
+                            {
+                                "type": "boolean"
+                            },
+                            {
+                                "type": "null"
+                            }
+                        ],
+                        "title": "Active"
+                    }
+                },
+                "type": "object",
+                "title": "ReminderUpdate"
+            },
+            "TrackedItemRead": {
+                "properties": {
+                    "category": {
+                        "type": "string",
+                        "enum": [
+                            "medication",
+                            "water",
+                            "meal",
+                            "workout",
+                            "vital_check",
+                            "custom"
+                        ],
+                        "title": "Category"
+                    },
+                    "name": {
+                        "type": "string",
+                        "title": "Name"
+                    },
+                    "metadata": {
+                        "additionalProperties": true,
+                        "type": "object",
+                        "title": "Metadata"
+                    },
+                    "id": {
+                        "type": "string",
+                        "format": "uuid",
+                        "title": "Id"
+                    },
+                    "user_id": {
+                        "type": "string",
+                        "format": "uuid",
+                        "title": "User Id"
+                    },
+                    "status": {
+                        "type": "string",
+                        "enum": [
+                            "active",
+                            "paused",
+                            "discontinued"
+                        ],
+                        "title": "Status"
+                    },
+                    "start_date": {
+                        "type": "string",
+                        "format": "date",
+                        "title": "Start Date"
+                    },
+                    "end_date": {
+                        "anyOf": [
+                            {
+                                "type": "string",
+                                "format": "date"
+                            },
+                            {
+                                "type": "null"
+                            }
+                        ],
+                        "title": "End Date"
+                    },
+                    "source": {
+                        "type": "string",
+                        "enum": [
+                            "manual",
+                            "kyros",
+                            "ai_extracted"
+                        ],
+                        "title": "Source"
+                    },
+                    "source_ref": {
+                        "anyOf": [
+                            {
+                                "type": "string"
+                            },
+                            {
+                                "type": "null"
+                            }
+                        ],
+                        "title": "Source Ref"
+                    },
+                    "created_at": {
+                        "type": "string",
+                        "format": "date-time",
+                        "title": "Created At"
+                    },
+                    "updated_at": {
+                        "type": "string",
+                        "format": "date-time",
+                        "title": "Updated At"
+                    },
+                    "reminders": {
+                        "items": {
+                            "$ref": "#/components/schemas/ReminderRead"
+                        },
+                        "type": "array",
+                        "title": "Reminders",
+                        "default": []
+                    }
+                },
+                "type": "object",
+                "required": [
+                    "category",
+                    "name",
+                    "id",
+                    "user_id",
+                    "status",
+                    "start_date",
+                    "end_date",
+                    "source",
+                    "source_ref",
+                    "created_at",
+                    "updated_at"
+                ],
+                "title": "TrackedItemRead"
+            },
+            "TrackedItemUpdate": {
+                "properties": {
+                    "name": {
+                        "anyOf": [
+                            {
+                                "type": "string"
+                            },
+                            {
+                                "type": "null"
+                            }
+                        ],
+                        "title": "Name"
+                    },
+                    "item_metadata": {
+                        "anyOf": [
+                            {
+                                "additionalProperties": true,
+                                "type": "object"
+                            },
+                            {
+                                "type": "null"
+                            }
+                        ],
+                        "title": "Item Metadata"
+                    },
+                    "status": {
+                        "anyOf": [
+                            {
+                                "type": "string",
+                                "enum": [
+                                    "active",
+                                    "paused",
+                                    "discontinued"
+                                ]
+                            },
+                            {
+                                "type": "null"
+                            }
+                        ],
+                        "title": "Status"
+                    },
+                    "end_date": {
+                        "anyOf": [
+                            {
+                                "type": "string",
+                                "format": "date"
+                            },
+                            {
+                                "type": "null"
+                            }
+                        ],
+                        "title": "End Date"
+                    }
+                },
+                "type": "object",
+                "title": "TrackedItemUpdate"
+            },
+            "UpcomingFire": {
+                "properties": {
+                    "reminder_id": {
+                        "type": "string",
+                        "format": "uuid",
+                        "title": "Reminder Id"
+                    },
+                    "tracked_item_id": {
+                        "type": "string",
+                        "format": "uuid",
+                        "title": "Tracked Item Id"
+                    },
+                    "fire_at": {
+                        "type": "string",
+                        "format": "date-time",
+                        "title": "Fire At"
+                    },
+                    "fire_key": {
+                        "type": "string",
+                        "title": "Fire Key"
+                    },
+                    "payload": {
+                        "additionalProperties": true,
+                        "type": "object",
+                        "title": "Payload"
+                    }
+                },
+                "type": "object",
+                "required": [
+                    "reminder_id",
+                    "tracked_item_id",
+                    "fire_at",
+                    "fire_key",
+                    "payload"
+                ],
+                "title": "UpcomingFire"
+            },
+            "UserRead": {
+                "properties": {
+                    "id": {
+                        "type": "string",
+                        "format": "uuid",
+                        "title": "Id"
+                    },
+                    "device_id": {
+                        "anyOf": [
+                            {
+                                "type": "string"
+                            },
+                            {
+                                "type": "null"
+                            }
+                        ],
+                        "title": "Device Id"
+                    },
+                    "email": {
+                        "anyOf": [
+                            {
+                                "type": "string"
+                            },
+                            {
+                                "type": "null"
+                            }
+                        ],
+                        "title": "Email"
+                    },
+                    "kyros_patient_id": {
+                        "anyOf": [
+                            {
+                                "type": "string"
+                            },
+                            {
+                                "type": "null"
+                            }
+                        ],
+                        "title": "Kyros Patient Id"
+                    },
+                    "subscription_tier": {
+                        "type": "string",
+                        "title": "Subscription Tier"
+                    },
+                    "timezone": {
+                        "type": "string",
+                        "title": "Timezone"
+                    },
+                    "created_at": {
+                        "type": "string",
+                        "format": "date-time",
+                        "title": "Created At"
+                    },
+                    "updated_at": {
+                        "type": "string",
+                        "format": "date-time",
+                        "title": "Updated At"
+                    }
+                },
+                "type": "object",
+                "required": [
+                    "id",
+                    "device_id",
+                    "email",
+                    "kyros_patient_id",
+                    "subscription_tier",
+                    "timezone",
+                    "created_at",
+                    "updated_at"
+                ],
+                "title": "UserRead"
+            },
+            "UserUpdate": {
+                "properties": {
+                    "email": {
+                        "anyOf": [
+                            {
+                                "type": "string",
+                                "format": "email"
+                            },
+                            {
+                                "type": "null"
+                            }
+                        ],
+                        "title": "Email"
+                    },
+                    "timezone": {
+                        "anyOf": [
+                            {
+                                "type": "string"
+                            },
+                            {
+                                "type": "null"
+                            }
+                        ],
+                        "title": "Timezone"
+                    },
+                    "subscription_tier": {
+                        "anyOf": [
+                            {
+                                "type": "string"
+                            },
+                            {
+                                "type": "null"
+                            }
+                        ],
+                        "title": "Subscription Tier"
+                    }
+                },
+                "type": "object",
+                "title": "UserUpdate"
+            },
+            "ValidationError": {
+                "properties": {
+                    "loc": {
+                        "items": {
+                            "anyOf": [
+                                {
+                                    "type": "string"
+                                },
+                                {
+                                    "type": "integer"
+                                }
+                            ]
+                        },
+                        "type": "array",
+                        "title": "Location"
+                    },
+                    "msg": {
+                        "type": "string",
+                        "title": "Message"
+                    },
+                    "type": {
+                        "type": "string",
+                        "title": "Error Type"
+                    }
+                },
+                "type": "object",
+                "required": [
+                    "loc",
+                    "msg",
+                    "type"
+                ],
+                "title": "ValidationError"
+            },
+            "VitalCheckItemCreate": {
+                "properties": {
+                    "name": {
+                        "type": "string",
+                        "title": "Name"
+                    },
+                    "start_date": {
+                        "type": "string",
+                        "format": "date",
+                        "title": "Start Date"
+                    },
+                    "end_date": {
+                        "anyOf": [
+                            {
+                                "type": "string",
+                                "format": "date"
+                            },
+                            {
+                                "type": "null"
+                            }
+                        ],
+                        "title": "End Date"
+                    },
+                    "category": {
+                        "type": "string",
+                        "const": "vital_check",
+                        "title": "Category"
+                    },
+                    "metadata": {
+                        "additionalProperties": true,
+                        "type": "object",
+                        "title": "Metadata",
+                        "default": {}
+                    }
+                },
+                "type": "object",
+                "required": [
+                    "name",
+                    "start_date",
+                    "category"
+                ],
+                "title": "VitalCheckItemCreate"
+            },
+            "WaterItemCreate": {
+                "properties": {
+                    "name": {
+                        "type": "string",
+                        "title": "Name"
+                    },
+                    "start_date": {
+                        "type": "string",
+                        "format": "date",
+                        "title": "Start Date"
+                    },
+                    "end_date": {
+                        "anyOf": [
+                            {
+                                "type": "string",
+                                "format": "date"
+                            },
+                            {
+                                "type": "null"
+                            }
+                        ],
+                        "title": "End Date"
+                    },
+                    "category": {
+                        "type": "string",
+                        "const": "water",
+                        "title": "Category"
+                    },
+                    "metadata": {
+                        "$ref": "#/components/schemas/WaterMeta"
+                    }
+                },
+                "type": "object",
+                "required": [
+                    "name",
+                    "start_date",
+                    "category",
+                    "metadata"
+                ],
+                "title": "WaterItemCreate"
+            },
+            "WaterMeta": {
+                "properties": {
+                    "daily_target_ml": {
+                        "type": "integer",
+                        "title": "Daily Target Ml"
+                    },
+                    "glass_size_ml": {
+                        "type": "integer",
+                        "title": "Glass Size Ml",
+                        "default": 250
+                    }
+                },
+                "type": "object",
+                "required": [
+                    "daily_target_ml"
+                ],
+                "title": "WaterMeta"
+            },
+            "WorkoutItemCreate": {
+                "properties": {
+                    "name": {
+                        "type": "string",
+                        "title": "Name"
+                    },
+                    "start_date": {
+                        "type": "string",
+                        "format": "date",
+                        "title": "Start Date"
+                    },
+                    "end_date": {
+                        "anyOf": [
+                            {
+                                "type": "string",
+                                "format": "date"
+                            },
+                            {
+                                "type": "null"
+                            }
+                        ],
+                        "title": "End Date"
+                    },
+                    "category": {
+                        "type": "string",
+                        "const": "workout",
+                        "title": "Category"
+                    },
+                    "metadata": {
+                        "$ref": "#/components/schemas/WorkoutMeta"
+                    }
+                },
+                "type": "object",
+                "required": [
+                    "name",
+                    "start_date",
+                    "category",
+                    "metadata"
+                ],
+                "title": "WorkoutItemCreate"
+            },
+            "WorkoutMeta": {
+                "properties": {
+                    "workout_type": {
+                        "type": "string",
+                        "title": "Workout Type"
+                    },
+                    "duration_minutes": {
+                        "type": "integer",
+                        "title": "Duration Minutes"
+                    },
+                    "location": {
+                        "anyOf": [
+                            {
+                                "type": "string"
+                            },
+                            {
+                                "type": "null"
+                            }
+                        ],
+                        "title": "Location"
+                    }
+                },
+                "type": "object",
+                "required": [
+                    "workout_type",
+                    "duration_minutes"
+                ],
+                "title": "WorkoutMeta"
+            }
+        }
+    },
+    "tags": [
+        {
+            "name": "Health",
+            "description": "Service health and readiness."
+        },
+        {
+            "name": "Users",
+            "description": "User identity and guest onboarding."
+        },
+        {
+            "name": "Wellness",
+            "description": "Phase 1 wellness tracking."
+        },
+        {
+            "name": "Clinic",
+            "description": "Phase 2 clinic platform."
+        }
+    ]
+}

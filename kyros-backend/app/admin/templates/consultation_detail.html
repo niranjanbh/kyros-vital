@@ -1,0 +1,79 @@
+{% extends "base.html" %}
+{% block content %}
+<h1>Consultation — {{ consult.patient_name }}</h1>
+
+{% if flash %}<div class="alert alert-ok">{{ flash }}</div>{% endif %}
+{% if error %}<div class="alert alert-error">{{ error }}</div>{% endif %}
+
+<div class="section">
+  <h3>Details</h3>
+  <div class="table-wrap">
+    <table>
+      <tbody>
+        <tr><td><strong>ID</strong></td><td class="mono">{{ consult.id }}</td></tr>
+        <tr><td><strong>Patient name</strong></td><td>{{ consult.patient_name }}</td></tr>
+        <tr><td><strong>Phone</strong></td><td class="mono">{{ consult.patient_phone }}</td></tr>
+        <tr><td><strong>Email</strong></td><td>{{ consult.patient_email or '—' }}</td></tr>
+        <tr><td><strong>Condition</strong></td><td>{{ consult.condition_category or '—' }}</td></tr>
+        <tr><td><strong>Status</strong></td><td><span class="badge badge-{{ consult.status }}">{{ consult.status }}</span></td></tr>
+        <tr><td><strong>Preferred slot</strong></td><td>{{ consult.preferred_slot.strftime('%Y-%m-%d %H:%M UTC') if consult.preferred_slot else '—' }}</td></tr>
+        <tr><td><strong>Scheduled at</strong></td><td>{{ consult.scheduled_at.strftime('%Y-%m-%d %H:%M UTC') if consult.scheduled_at else '—' }}</td></tr>
+        <tr><td><strong>Completed at</strong></td><td>{{ consult.completed_at.strftime('%Y-%m-%d %H:%M UTC') if consult.completed_at else '—' }}</td></tr>
+        <tr><td><strong>Meeting link</strong></td><td>{% if consult.meeting_link %}<a href="{{ consult.meeting_link }}" target="_blank">{{ consult.meeting_link }}</a>{% else %}—{% endif %}</td></tr>
+        <tr><td><strong>Provider</strong></td><td>{{ consult.meeting_provider or '—' }}</td></tr>
+        <tr><td><strong>Fee paid</strong></td><td>{% if consult.fee_paid_paise %}₹{{ consult.fee_paid_paise // 100 }}{% else %}—{% endif %}</td></tr>
+        <tr><td><strong>Razorpay ID</strong></td><td class="mono">{{ consult.razorpay_payment_id or '—' }}</td></tr>
+        <tr><td><strong>Source</strong></td><td>{{ consult.source }}</td></tr>
+        <tr><td><strong>Notes</strong></td><td style="white-space:pre-wrap;">{{ consult.notes or '—' }}</td></tr>
+        <tr><td><strong>Created</strong></td><td>{{ consult.created_at.strftime('%Y-%m-%d %H:%M UTC') }}</td></tr>
+      </tbody>
+    </table>
+  </div>
+</div>
+
+<div class="section">
+  <h2>Update consultation</h2>
+  <p class="muted" style="margin-bottom:16px;font-size:0.875rem;">
+    Type <strong>{{ confirm_phrase }}</strong> in the confirmation field to save changes.
+  </p>
+  <form method="post" action="/admin/consultations/{{ consult.id }}/status" style="max-width:480px;">
+    <div class="form-group">
+      <label for="status">Status</label>
+      <select name="status" id="status">
+        {% for s in valid_statuses %}
+        <option value="{{ s }}" {% if consult.status == s %}selected{% endif %}>{{ s }}</option>
+        {% endfor %}
+      </select>
+    </div>
+    <div class="form-group">
+      <label for="meeting_link">Meeting link</label>
+      <input type="url" name="meeting_link" id="meeting_link" value="{{ consult.meeting_link or '' }}">
+    </div>
+    <div class="form-group">
+      <label for="meeting_provider">Provider</label>
+      <select name="meeting_provider" id="meeting_provider">
+        <option value="">—</option>
+        <option value="zoom" {% if consult.meeting_provider == 'zoom' %}selected{% endif %}>Zoom</option>
+        <option value="meet" {% if consult.meeting_provider == 'meet' %}selected{% endif %}>Google Meet</option>
+      </select>
+    </div>
+    <div class="form-group">
+      <label for="scheduled_at">Scheduled at (UTC)</label>
+      <input type="datetime-local" name="scheduled_at" id="scheduled_at"
+        value="{{ consult.scheduled_at.strftime('%Y-%m-%dT%H:%M') if consult.scheduled_at else '' }}">
+    </div>
+    <div class="form-group">
+      <label for="notes">Notes</label>
+      <textarea name="notes" id="notes">{{ consult.notes or '' }}</textarea>
+    </div>
+    <div class="form-group">
+      <label for="confirmation">Type {{ confirm_phrase }} to confirm</label>
+      <input type="text" name="confirmation" id="confirmation" autocomplete="off" placeholder="{{ confirm_phrase }}" required>
+    </div>
+    <div style="display:flex;gap:10px;">
+      <button type="submit" class="btn btn-primary">Save changes</button>
+      <a href="/admin/consultations" class="btn">Cancel</a>
+    </div>
+  </form>
+</div>
+{% endblock %}

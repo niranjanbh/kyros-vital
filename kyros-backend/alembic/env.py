@@ -3,6 +3,7 @@ from logging.config import fileConfig
 
 from sqlalchemy.ext.asyncio import create_async_engine
 
+import app.clinic.models  # noqa: F401 — registers clinic models (P2+)
 import app.shared.models  # noqa: F401 — registers User, AuditLog
 import app.wellness.models  # noqa: F401 — registers wellness models (P1+)
 from alembic import context

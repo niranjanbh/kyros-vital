@@ -1,0 +1,70 @@
+{% extends "base.html" %}
+{% block content %}
+<h1>Tracked Items</h1>
+
+{% if flash %}<div class="alert alert-ok">{{ flash }}</div>{% endif %}
+{% if error %}<div class="alert alert-error">{{ error }}</div>{% endif %}
+
+<form method="get" class="filter-bar">
+  <div class="form-group" style="margin:0;">
+    <select name="status">
+      <option value="">All statuses</option>
+      {% for s in ['active','paused','discontinued'] %}
+      <option value="{{ s }}" {% if filter_status == s %}selected{% endif %}>{{ s }}</option>
+      {% endfor %}
+    </select>
+  </div>
+  <div class="form-group" style="margin:0;">
+    <select name="category">
+      <option value="">All categories</option>
+      {% for c in ['medication','water','meal','workout','vital_check','custom'] %}
+      <option value="{{ c }}" {% if filter_category == c %}selected{% endif %}>{{ c }}</option>
+      {% endfor %}
+    </select>
+  </div>
+  <button type="submit" class="btn btn-sm">Filter</button>
+  <a href="/admin/items" class="btn btn-sm">Clear</a>
+</form>
+
+<p class="muted" style="margin-bottom:16px;font-size:0.8rem;">
+  Showing {{ items|length }} of {{ total }} items (page {{ page }})
+</p>
+
+<div class="table-wrap">
+  <table>
+    <thead><tr>
+      <th>ID</th><th>User</th><th>Category</th><th>Name</th>
+      <th>Status</th><th>Start</th><th>Source</th><th>Reminders</th><th>Action</th>
+    </tr></thead>
+    <tbody>
+      {% for item in items %}
+      <tr>
+        <td class="mono">{{ str(item.id)[:8] }}…</td>
+        <td><a href="/admin/users/{{ item.user_id }}">{{ user_map.get(item.user_id, str(item.user_id)[:8]) }}</a></td>
+        <td>{{ item.category }}</td>
+        <td>{{ item.name }}</td>
+        <td><span class="badge badge-{{ item.status }}">{{ item.status }}</span></td>
+        <td class="muted">{{ item.start_date }}</td>
+        <td class="muted">{{ item.source }}</td>
+        <td>{{ reminder_counts.get(item.id, 0) }}</td>
+        <td>
+          {% if item.status == 'active' %}
+          <a href="/admin/items/{{ item.id }}/discontinue" class="btn btn-sm btn-danger">Discontinue</a>
+          {% else %}
+          <span class="muted">—</span>
+          {% endif %}
+        </td>
+      </tr>
+      {% else %}
+      <tr><td colspan="9" class="muted">No items found.</td></tr>
+      {% endfor %}
+    </tbody>
+  </table>
+</div>
+
+<div class="pagination">
+  {% if page > 1 %}<a href="?page={{ page - 1 }}&status={{ filter_status }}&category={{ filter_category }}">&larr; Prev</a>{% endif %}
+  <span>Page {{ page }}</span>
+  {% if items|length == page_size %}<a href="?page={{ page + 1 }}&status={{ filter_status }}&category={{ filter_category }}">Next &rarr;</a>{% endif %}
+</div>
+{% endblock %}

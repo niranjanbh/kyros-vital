@@ -1052,85 +1052,562 @@ After completion:
 
 ---
 
-### Prompts 7–13 — Mobile feature screens
+### Prompt 7 — Today dashboard
 
-These are **unchanged from v1** in structure. The only difference: wherever v1 referenced `packages/types`, v7+ reference `src/api/generated/schema.ts` types instead, accessed via `openapi-fetch` typed responses.
+```
+Implement the Today screen at app/(tabs)/index.tsx in apps/mobile.
+ 
+Layout, top to bottom:
+1. Header row
+   - Greeting in Fraunces displayM ("Good morning" / "Good afternoon" / "Good evening" based on local time)
+   - Date below in Geist Mono caption, --slate ("Wednesday, 20 May")
+   - Settings icon top-right (lucide Settings, --slate)
+ 
+2. Today section
+   - Section label "TODAY" in caption, uppercase, letter-spaced, --mist
+   - Vertical timeline of upcoming reminders for the next 18 hours, fetched from GET /reminders/upcoming?hours=18
+   - Each item: time on left (Geist Mono, --slate), title + subtitle in middle, status/action on right
+     - Subtitle examples: "Metformin 500mg · with food", "Glass of water · 250 ml", "Strength workout · 45 min"
+   - Items past their fire time and not yet logged: title in --ink, time in --warning
+   - Items already logged: title in --slate strikethrough, time in --slate
+   - Tap an item → opens a bottom sheet with [Taken] [Skipped] [Snooze 15m] actions
+   - Tapping an action calls POST /logs with the right fire_key for dedupe, then optimistically updates the UI via TanStack Query
+ 
+3. Recent measurements section
+   - Section label "RECENT"
+   - Up to 3 Sparkline cards horizontally scrollable
+   - Each card: type name in label uppercase, latest value in Fraunces displayL with unit in body --slate, 14-day sparkline below, trend indicator (▲/▼/—) with delta vs 30-day average
+   - Tap → measurement type detail screen (stub for now, just a route)
+ 
+4. This week section
+   - Section label "THIS WEEK"
+   - 2–3 plain text status lines, no charts
+   - Examples: "5 of 7 days on water goal", "BP stable across 4 readings", "No missed medications"
+   - These are computed locally from logs/measurements queries — Phase 1 dumb-aggregations, not AI
+ 
+5. Empty states
+   - No reminders today → EmptyState with title "Nothing scheduled for today", subtitle "Add your first reminder from the Library tab", small ghost button "Open Library"
+   - No measurements yet → suppress section entirely
+   - No data for This week → suppress section entirely
+ 
+Spacing: 24 px between sections, 12 px between timeline items.
+ 
+After completion: seed the dev API with a medication (2x daily), a water target, and 5 weight measurements over 14 days. Verify the Today screen renders all three sections correctly.
+```
+ 
+---
 
-For brevity, here are the prompt titles. The full text from v1 of the spec applies, with the following find-replace:
-- `packages/types` → `src/api/generated`
-- `Zod schemas from packages/types` → `types from src/api/generated/schema.ts + Zod schemas defined inline in src/api/schemas/`
-- `TanStack Query hook for /reminders/upcoming` → `TanStack Query hook for /v1/wellness/reminders/upcoming` (note the `/v1/wellness/` prefix throughout)
+### Prompt 8 — Library + tracked item CRUD UI
 
-The full prompts:
-- **P7** — Today dashboard (timeline, sparkline cards, weekly status)
-- **P8** — Library + tracked item CRUD UI (category-grouped list, per-category forms, detail view)
-- **P9** — Reminder builder + schedule UI primitives (ScheduleBuilder, RecurringBuilder, IntervalBuilder)
-- **P10** — Local notification engine (expo-notifications, scheduler.sync(), action handlers, snooze)
-- **P11** — Measurements + charts (entry forms, Victory Native trend charts, BP dual-line)
-- **P12** — Lab reports (camera/file upload, manual data entry, list + detail)
-- **P13** — Insights, history, onboarding, settings, polish
+```
+Implement the Library tab and the tracked-item create/edit flows.
+ 
+Library screen at app/(tabs)/library.tsx:
+- Header: "Library" in Fraunces displayM, plus icon top-right linking to /item/new
+- Filter chips row: All, Medication, Water, Meals, Workout, Vitals, Custom (--ink active, --slate inactive, hairline borders, no fills)
+- Sectioned list grouped by category:
+  - Section header in label caption uppercase --mist
+  - Each row uses ListItem: category icon left, name + subtitle (e.g. "Metformin 500mg · 2x daily"), --mist chevron right
+  - Tap → /item/[id]
+- Empty state if no items: "No tracked items yet", body "Add medications, water goals, workouts, and more.", primary button "Add your first item"
+ 
+Category picker screen at app/item/new.tsx:
+- Vertical list of 6 large cards, one per category, each with icon + name + one-line description
+- Tap → /item/new/medication, /item/new/water, etc. (sub-routes for each form)
+ 
+Per-category create forms (one screen each):
+- Medication form fields:
+  - drug_name (text, required)
+  - dosage (text, e.g. "500 mg", required)
+  - form (segmented: tablet / capsule / syrup / injection / other)
+  - times_per_day (number stepper 1–6)
+  - specific_times[] (TimePicker per dose, defaults spread across waking hours)
+  - days_of_week (DayOfWeekPicker, default all)
+  - with_food (toggle)
+  - start_date (date picker, default today)
+  - end_date (optional, "Ongoing" toggle)
+  - instructions (multiline, optional)
+- Water form:
+  - daily_target_ml (number, default 2500)
+  - reminder_interval_minutes (number, default 120)
+  - active_window start/end (TimePicker, default 08:00–22:00)
+- Workout form:
+  - workout_type (text)
+  - duration_minutes (number)
+  - days_of_week (DayOfWeekPicker)
+  - time_of_day (TimePicker)
+  - location (text, optional)
+- Meal form:
+  - meal_name (text, e.g. "Breakfast")
+  - time (TimePicker)
+  - days_of_week (DayOfWeekPicker)
+  - notes (multiline, optional)
+- Custom form:
+  - title, message, schedule (full schedule builder with both recurring and interval modes)
+ 
+On save, each form POSTs to:
+- /tracked-items (the item itself, metadata populated from form fields)
+- /tracked-items/:id/reminders (one reminder with the corresponding schedule JSON and a message_template using the right placeholders)
+ 
+Then navigates back to Library.
+ 
+Tracked item detail at app/item/[id].tsx:
+- Header: item name in displayM, category badge below
+- "Reminders" section: list of attached reminders with their schedule summary in plain English ("Daily at 8:00 AM and 8:00 PM")
+- "Recent activity" section: last 10 log entries, each row showing time + action
+- "Adherence (last 30 days)" stat: simple percentage from logs vs expected fires
+- Buttons: Edit (opens the same form prefilled), Pause/Resume (toggles status), Discontinue (soft delete with confirm)
+ 
+Forms use react-hook-form with Zod resolvers, importing schemas from packages/types.
+ 
+After completion: create one item of each category through the UI and verify they appear in the Library list and on Today.
+```
+ 
+---
 
-Run them in order. Each one ships a vertical slice that compiles and runs.
+### Prompt 9 — Reminder builder and schedule UI primitives
+
+```
+Build the reusable reminder schedule builder used by all category forms.
+ 
+Components in src/components/schedule/:
+- ScheduleBuilder.tsx — top-level component, takes a value/onChange schedule JSON. Has a segmented control at the top: "At specific times" / "Every few hours". Renders RecurringBuilder or IntervalBuilder.
+- RecurringBuilder.tsx — manages times[] with add/remove rows, each row uses TimePicker; below, DayOfWeekPicker; below, optional date range (start_date / end_date with "Ongoing" toggle)
+- IntervalBuilder.tsx — number input for interval_minutes (with helpful labels "Every 1h", "Every 2h"), then active_window start/end TimePickers, then DayOfWeekPicker
+- TimePicker.tsx — wraps @react-native-community/datetimepicker; outputs "HH:mm" strings
+- DayOfWeekPicker.tsx — 7 toggleable pills, each shows first letter of weekday in Geist Mono; selected = --ink fill + paper text, unselected = hairline border + --slate text
+ 
+ScheduleBuilder must:
+- Default timezone to the user's device timezone, stored in the schedule JSON
+- Validate using scheduleSchema from packages/types on blur
+- Show inline error text (--critical) under the field if invalid
+- Emit a schedule JSON that round-trips through scheduleSchema.parse() without loss
+ 
+Integrate ScheduleBuilder into the Custom form. For the other category forms, keep their tailored inputs but have the submit handler construct the equivalent schedule JSON internally — users don't see the full builder for medication/water/workout/meal, just the category-friendly fields.
+ 
+Add Vitest tests in src/components/schedule/__tests__:
+- Recurring schedule output matches expected JSON for "8am and 8pm every day"
+- Interval schedule output matches expected JSON for "every 2 hours, 8am–10pm, weekdays only"
+- Invalid schedule (end time before start time) shows inline error
+ 
+After completion: open the Custom form, build a schedule that fires every 90 minutes between 9 and 6 on weekdays only, save it, and verify the upcoming reminders endpoint expands it correctly for a 48-hour window.
+```
+ 
+---
+
+### Prompt 10 — Local notification engine
+
+```
+Wire up local notifications in apps/mobile using expo-notifications.
+ 
+Files:
+- src/notifications/permissions.ts — requestPermissions(), returns granted/denied
+- src/notifications/scheduler.ts   — sync() function: fetches /reminders/upcoming?hours=72, diffs against currently scheduled local notifications, cancels obsolete ones, schedules new ones. Each scheduled notification carries identifier = fire_key.
+- src/notifications/handlers.ts    — Notification action handler: when user taps "Taken" / "Skipped" / "Snooze 15m" on a notification, POSTs the corresponding log entry with the fire_key from the notification data. Snooze creates a one-off local notification 15 minutes out.
+- src/notifications/categories.ts  — registers a notification category "MEDICATION" with three action buttons: Taken (foreground), Skipped (background), Snooze (background). Similarly "WATER", "WORKOUT", "MEAL" with appropriate actions.
+ 
+Behavior:
+- On app foreground, scheduler.sync() runs once
+- On any tracked_item or reminder mutation, scheduler.sync() re-runs (invalidate + refetch + reschedule)
+- On notification permission denied, surface a non-blocking banner on Today that links to Settings → Notifications
+- Snooze 15m: schedule local notif at now+15min with same payload, no API call required (log goes through when user actually taps Taken)
+ 
+Edge cases to handle in code:
+- App killed: local notifications still fire (this is the point of local, not push)
+- Timezone change: scheduler.sync() detects via device API and re-syncs
+- DST: handled by expandSchedule in packages/types (already tested there)
+- Notification permission revoked between sessions: detected on foreground, banner shown
+ 
+Settings tab additions:
+- Toggle: Notification permissions (deep links to OS settings if denied)
+- Toggle: Notification sound on/off
+- Timezone display (read-only, computed from device)
+ 
+After completion: create a medication with a reminder 2 minutes in the future, lock the device, wait for the notification to fire, tap "Taken" from the lock screen, then verify the log entry appears on Today.
+```
+ 
+---
+
+### Prompt 11 — Measurements + charts
+
+```
+Implement the measurements feature.
+ 
+Screens:
+- app/measurement/new.tsx — form
+  - Type select (weight, BP systolic, BP diastolic, heart rate, fasting glucose, HbA1c, body temp, steps). For BP, render systolic + diastolic as a single form that creates two measurement rows linked by measured_at.
+  - Value input (numeric keypad)
+  - Unit auto-set per type (kg / mmHg / bpm / mg/dL / % / °C / count) but editable
+  - measured_at datetime, defaults to now
+  - Optional note
+  - Submit → POST /measurements
+ 
+- app/measurement/[type].tsx — detail/trend screen
+  - Header: type name in displayM, latest value in displayXL Fraunces with unit in body --slate, trend indicator vs 30-day average
+  - Time range chips: 7d / 30d / 90d / 1y / All (--ink active)
+  - Chart: Victory Native XL line chart, --chart-line stroke at 1.5 px, no fill, hairline x-axis only, no y-axis line, y-axis labels in mono --slate
+  - Reference range band rendered as a translucent --hairline horizontal stripe behind the line if reference_range is present
+  - Below chart: list of individual measurements with edit / delete swipe actions
+  - For BP, the chart renders two lines (systolic --ink, diastolic --slate)
+ 
+Wire the Today screen's "RECENT" sparkline cards to deep-link into /measurement/[type] on tap.
+ 
+Add chart utilities in src/charts/:
+- formatValue(type, value) — returns formatted string with unit
+- trendDirection(values) — returns 'up' | 'down' | 'flat' with a delta percentage
+- mergeBPRows(measurements) — pairs systolic + diastolic by measured_at
+ 
+After completion: enter 30 days of weight measurements (small fluctuations), view the 30d chart, verify the trend indicator and reference range render. Enter 10 BP readings, verify both lines render.
+```
+ 
+---
+
+### Prompt 12 — Lab reports
+
+```
+Implement lab report capture and viewing.
+ 
+Screens:
+- app/lab/new.tsx
+  - Camera / Gallery / PDF picker at top (use expo-image-picker + expo-document-picker). Preview thumbnail once selected.
+  - report_date (date picker, defaults today)
+  - lab_name (text, optional)
+  - Tests array (manually entered in Phase 1):
+    - Each test row: name (text), value (text — keep as string so "Negative" works), unit (text), reference low (numeric, optional), reference high (numeric, optional), flag (none / low / high / critical — manual select)
+    - "Add another test" button at the bottom
+  - Note (multiline, optional)
+  - Submit → multipart POST /lab-reports with file + parsed JSON
+ 
+- app/(tabs)/library.tsx — add a "Lab reports" section below tracked items, list cards with date, lab name, count of flagged values. Tap → /lab/[id].
+  - (Alternative: lab reports get their own tab. Decide based on whether the Insights tab feels too empty in Phase 1 — for now, keep them in Library.)
+ 
+- app/lab/[id].tsx
+  - Header: lab_name + report_date in displayM
+  - "View original" button (opens file via signed URL using expo-web-browser or in-app PDF viewer for PDFs)
+  - Tests table:
+    - Geist Mono for values and reference ranges (tabular alignment)
+    - Flag column shows colored typographic badge: --positive "Normal", --warning "Low" / "High", --critical "Critical"
+    - Long press a test row → option to "Convert to tracked measurement" (creates a measurements row with the same value, useful for HbA1c, fasting glucose, etc.)
+  - Edit / Delete buttons in header
+ 
+Required state handling:
+- File upload progress bar during multipart submit
+- Retry on network failure
+- Validation: at least one test row required
+ 
+After completion: upload a sample PDF lab report with 6 tests (2 flagged), view it, convert HbA1c to a measurement, verify it appears in /measurement/hba1c.
+```
+ 
+---
+
+### Prompt 13 — Insights, history, onboarding, settings, polish
+
+```
+Final Phase 1 prompt. Ship the remaining surfaces and polish the rough edges.
+ 
+Insights tab (app/(tabs)/insights.tsx):
+- Header "Insights" in displayM
+- Three section cards:
+  1. Adherence — last 30 days. Bar showing % medications taken, % water target days hit, % workouts completed. Each row uses Sparkline-style minimal bars, no colour beyond --ink and --hairline.
+  2. Trends — list of measurement types with their 30-day direction (▲ ▼ —) and current value. Tap → /measurement/[type].
+  3. Lab summary — count of reports added, count of flagged tests in last 90 days.
+- Empty state until at least 7 days of data exist
+ 
+History (accessible from settings or as a section in Insights):
+- /history screen
+- Filter chips: All, Medications, Water, Workouts, Meals, Custom
+- Date range picker
+- Vertical list of log_entries, newest first, infinite scroll
+- Each row: time (Geist Mono --slate), tracked item name, action ("Taken" --positive, "Skipped" --warning, etc.)
+ 
+Settings tab (app/(tabs)/settings.tsx):
+- Account section — Phase 1 just shows "Guest mode" with explanation, "Sign in to back up" stub
+- Notifications — toggle, deep link to OS settings
+- Timezone — read-only display
+- Data — Export all data (JSON), Delete all data (with confirm)
+- About — version, build, link to privacy policy URL (use a placeholder URL for now)
+ 
+Onboarding (first-run, gated by AsyncStorage flag):
+- Three screens, swipeable:
+  1. Title "Your wellness, in one place." Subtitle. Continue button.
+  2. Title "Reminders that respect your day." Body about how Phase 1 keeps it manual and private. Continue.
+  3. Title "Add what matters first." Continue.
+- On the third screen's Continue: request notification permission, then route to Library/new to create the first tracked item.
+ 
+Edge case polish:
+- Network error component: --slate banner at top of screen with retry, never blocks UI
+- Loading skeletons for all list screens (not spinners — use hairline placeholder bars)
+- Pull-to-refresh on Today, Library, Insights
+- Accessibility pass: every Pressable has accessibilityLabel, every icon used semantically has accessibilityRole, font scales respect OS settings up to 1.3x without breaking layouts
+- Haptics: light haptic on log action confirm, success haptic on submit, error haptic on validation failure
+ 
+After completion: do a full end-to-end run — fresh install, onboarding, create a medication, receive a notification, tap Taken, view it on Today, view it in History, view adherence on Insights, export data, verify the JSON contains everything.
+```
+
 
 ---
 
 ## 7. Design generation prompt (for Canva, Figma First Draft, etc.)
+Use this prompt to generate a high-fidelity visual mockup of the Today dashboard before queuing Prompt 7 (the mobile build prompt) in Claude Code.
 
-Unchanged from v1. Paste this into your design tool of choice:
+## Which tool to use
+
+Paste this prompt into **one of these**, in order of preference:
+
+1. **v0.dev** — best for high-fidelity mobile app UI from text prompts. Outputs React + Tailwind code you can ignore; keep the visual.
+2. **Lovable.dev** or **bolt.new** — same idea, slightly different aesthetics.
+3. **Claude.ai** (a fresh chat) — ask for an HTML/Tailwind mobile mockup; screenshot it.
+4. **Galileo AI** or **Uizard** — if you prefer a design-tool UX over a code-output UX.
+   Avoid Canva's AI and Figma First Draft for this — they're tuned for marketing graphics, not app UI with this much specification.
+
+---
+
+## The prompt (copy-paste, full)
 
 ```
-Design a single mobile screen (390 × 844 px) for a premium health-tracking app called Vital. Aesthetic direction is editorial clinical — like a refined medical journal, not a consumer wellness app.
-
-STRICT RULES — DO NOT VIOLATE:
-- No purple-to-pink gradients. No glassmorphism. No neon. No 3D icons.
-- No bright blues or cyans. No "tech" accent colors.
+Design a single mobile screen (390 × 844 px) for a premium health-tracking app called Vital. Aesthetic direction is editorial clinical — like a refined medical journal with considered colour. Monocle magazine layout discipline + New England Journal of Medicine's restraint + Aesop's earthy palette + Apple Health's data clarity. Premium, calm, signal-rich, never decorative.
+ 
+═══════════════════════════════════════════════
+STRICT RULES — DO NOT VIOLATE
+═══════════════════════════════════════════════
+- No purple-to-pink gradients. No multi-stop gradients of any kind.
+- No glassmorphism, no frosted blurs, no glow effects.
+- No neon, no electric blue, no cyan, no fluorescent anything.
 - No emoji anywhere in the UI.
-- No rounded blobs or pill-shaped buttons.
-
-Colour palette (use these exact values):
-- Background: #FAF8F4 (warm bone white)
-- Card surface: #FFFFFF
-- Primary text: #1A1A1A
-- Secondary text: #595959
-- Tertiary text / labels: #8C8C8C
-- Hairline borders: #E8E5DD (use 1px borders, NOT shadows)
-- Accent: #2D5F5D (deep teal) — use sparingly, only for one primary CTA or active states
-- Positive state: #3F6B4E
-- Warning state: #B07A1F
-- Critical: #8B2C1F
-
-Typography:
-- Display headlines and large numerical values: Fraunces (serif, semibold, tight leading)
-- Body and UI text: Geist Sans (regular and medium)
-- Numbers in charts and timestamps: Geist Mono
-- Labels: Geist Sans, uppercase, letter-spaced, 11px, tertiary text color
-
-Screen content, top to bottom:
-1. Status bar area at top.
-2. Header row: "Good morning, Niranjan" in Fraunces 28px, with "Wednesday, 20 May" below in Geist Mono 13px tertiary text. Small outline settings icon top-right.
-3. Section label "TODAY" (caption, uppercase).
-4. Timeline of 5 reminders for today:
-   - 08:00 — Metformin 500mg, subtitle "with breakfast", state: ✓ taken (strikethrough, secondary text)
-   - 09:30 — Glass of water, subtitle "250 ml", state: ✓ taken
-   - 12:00 — Lunch, subtitle "Light meal", state: pending
-   - 17:30 — Strength workout, subtitle "45 min · Gym", state: pending
-   - 20:00 — Metformin 500mg, subtitle "with dinner", state: pending
-   Each row: time on left in mono, title and subtitle in middle, status indicator on right (small typographic check or — symbol).
-5. Section label "RECENT".
-6. Horizontal scroll of 3 measurement cards, each white with hairline border:
-   - "WEIGHT" label, "72.4 kg" in Fraunces 36px, "▼ 0.8 kg vs 30d avg" in mono caption positive color, small sparkline below
-   - "BLOOD PRESSURE" label, "118/76" in Fraunces 36px, "Within range" in caption positive, sparkline below
-   - "HBA1C" label, "5.6 %" in Fraunces 36px, "Last 4 months" in caption secondary, sparkline below
-7. Section label "THIS WEEK".
-8. Three plain-text status lines: "5 of 7 days on water goal." / "BP stable across 4 readings." / "No missed medications."
-9. Bottom tab bar: 4 tabs (Today, Library, Insights, Settings), single-line icons (no fills), Today active in primary text, others in tertiary. Hairline top border.
-
-Spacing: generous, 24px between sections, 12px between timeline items.
-Mood: calm, premium, restrained. The kind of screen a 45-year-old would trust with their lab results, not the kind a 22-year-old would screenshot for Instagram.
-
-Reference inspirations: Apple Health's restraint, Things 3's typography, One Medical's app, the New York Times Magazine's editorial layout — combined.
+- No 3D / claymorphic icons. Outline icons only, 1.5px stroke.
+- No pill-shaped buttons. No rounded blobs. Radius 8–10px max.
+- No shadows except one barely-perceptible card shadow on Today cards.
+- Colour must encode meaning. No decorative colour, no rainbow palettes.
+ 
+═══════════════════════════════════════════════
+COLOUR SYSTEM
+═══════════════════════════════════════════════
+ 
+SURFACES & TEXT (neutral foundation)
+- Background:        #F7F4ED  (warm bone, slightly warmer than pure cream)
+- Card surface:      #FFFFFF
+- Elevated card:     #FFFFFF with 1px border #E8E3D8 (no shadow)
+- Primary text:      #1A1A1A
+- Secondary text:    #5C5C5C
+- Tertiary / labels: #8C8C8C
+- Hairline borders:  #E8E3D8
+- Subtle divider:    #F0EBE0
+ 
+CATEGORY ACCENTS (muted, journal-quality — never bright)
+Each category gets its own restrained colour. Used on category icons,
+the left edge of timeline items (2px tint), and category labels.
+ 
+- Medication:  #4A5D7E  (slate navy — clinical, trustworthy)
+- Hydration:   #5B8A8F  (muted seafoam teal — water but not "tech teal")
+- Activity:    #8B5A3C  (warm clay brown — earthy, grounded)
+- Nutrition:   #7A6F4D  (olive ochre — food, not appetite-bright)
+- Vitals:      #6B4E71  (dusky plum — measurement, considered)
+- Custom:      #6B6F4D  (sage — neutral fallback)
+ 
+STATUS COLOURS (saturated enough to scan, muted enough to be premium)
+- Taken / on-target:    #3F6B4E  (muted forest green)
+- Pending / upcoming:   #B07A1F  (warm amber, used sparingly — only for items past their fire time)
+- Missed / overdue:     #B85C3C  (muted terracotta, only for clear misses)
+- Critical / flagged:   #8B2C1F  (deep brick, lab flags only)
+- Neutral state:        #5C5C5C  (secondary text)
+ 
+DATA VISUALIZATION
+- Sparkline lines:           #1A1A1A   (primary text colour, 1.5px stroke)
+- Sparkline fills:            none (line only)
+- Trend up (good context):   #3F6B4E
+- Trend down (good context): #3F6B4E   (e.g. weight loss is positive — context determines colour, not direction)
+- Trend neutral / flat:      #8C8C8C
+- Reference range bands:     #E8E3D8 at 40% opacity
+ 
+═══════════════════════════════════════════════
+TYPOGRAPHY
+═══════════════════════════════════════════════
+- Display headlines & large numbers:  Fraunces (variable serif, semibold ~580 weight, optical size aware, tight leading 1.1)
+- Body & UI:                          Geist Sans (regular 400, medium 500, semibold 600)
+- Numbers in charts, timestamps, log times:  Geist Mono (regular 400, medium 500)
+- Section labels:                     Geist Sans, uppercase, 11px, letter-spacing 0.08em, #8C8C8C
+- Body copy:                          15px / line-height 1.4
+- Captions:                           12px / #5C5C5C
+ 
+═══════════════════════════════════════════════
+SCREEN CONTENT (top to bottom)
+═══════════════════════════════════════════════
+ 
+1. STATUS BAR
+   Standard iOS status bar area. Background #F7F4ED.
+ 
+2. HEADER (24px top padding, 20px horizontal)
+   Row layout:
+   - Left:   "Good morning, Niranjan" in Fraunces 28px, #1A1A1A, semibold,
+             tight leading. Below: "Wednesday, 20 May" in Geist Mono 13px, #8C8C8C.
+   - Right:  Settings icon (lucide Settings, outline, 1.5px, 22×22, #5C5C5C).
+ 
+3. SECTION LABEL "TODAY"
+   Geist Sans uppercase 11px, letter-spaced, #8C8C8C, 32px top margin.
+ 
+4. TIMELINE (vertical list of 5 items, 14px gap between items, 20px horizontal padding)
+ 
+   Each timeline item is a row:
+   - Left edge:  A 2px-wide vertical tint bar in the category accent colour,
+                 8px tall, centred vertically. Sits 0px from card left edge.
+   - Card:       White #FFFFFF, 1px border #E8E3D8, 8px corner radius,
+                 padding 14px vertical, 16px horizontal.
+   - Time:       Geist Mono 13px, #5C5C5C, 56px fixed-width column on left
+   - Category icon: 18×18 outline lucide icon in the category accent colour
+                    (e.g. Pill for medication, Droplet for water, Dumbbell for workout, Utensils for meal)
+   - Title:      Geist Sans 15px medium, #1A1A1A
+   - Subtitle:   Geist Sans 13px regular, #8C8C8C
+   - Right side: Status indicator (see below)
+ 
+   The 5 items:
+ 
+   ┌─ 08:00 │ [Pill icon #4A5D7E]  Metformin 500mg
+   │        │ with breakfast                              ✓ #3F6B4E
+   │        │ STATE: taken — title strikethrough in #8C8C8C, time also #8C8C8C
+   │
+   ├─ 09:30 │ [Droplet icon #5B8A8F]  Hydration
+   │        │ 250 ml                                       ✓ #3F6B4E
+   │        │ STATE: taken — title strikethrough in #8C8C8C
+   │
+   ├─ 12:00 │ [Utensils icon #7A6F4D]  Lunch
+   │        │ Light meal                                   ○ #8C8C8C
+   │        │ STATE: pending (future) — full opacity, neutral indicator
+   │
+   ├─ 17:30 │ [Dumbbell icon #8B5A3C]  Strength workout
+   │        │ 45 min · Gym                                 ○ #8C8C8C
+   │        │ STATE: pending (future) — full opacity, neutral indicator
+   │
+   └─ 20:00 │ [Pill icon #4A5D7E]  Metformin 500mg
+            │ with dinner                                  ○ #8C8C8C
+            │ STATE: pending (future) — full opacity, neutral indicator
+ 
+   Status indicator on right of each row:
+   - Taken:    Small filled check ✓ in #3F6B4E, 16×16
+   - Pending:  Small outline circle ○ in #8C8C8C, 14×14
+   - Missed:   Small outline circle with slash ⊘ in #B85C3C, 14×14
+   These are typographic / iconic — no coloured backgrounds, no chips, no pills.
+ 
+5. SECTION LABEL "RECENT" (32px top margin, 16px bottom margin)
+ 
+6. MEASUREMENT CARDS (horizontal scroll, 3 cards visible)
+   Each card:
+   - White surface #FFFFFF, 1px border #E8E3D8, 12px corner radius
+   - 160×140px, 12px gap between cards
+   - Padding 16px
+ 
+   Card 1 — WEIGHT
+   - Label "WEIGHT" — Geist Sans uppercase 11px, letter-spaced, #6B4E71 (vitals accent)
+   - Value "72.4" in Fraunces 36px semibold #1A1A1A, with "kg" beside it in Geist Sans 14px #8C8C8C
+   - Delta row: "▼ 0.8 kg" in Geist Mono 12px #3F6B4E, then "vs 30d avg" in 12px #8C8C8C
+   - Sparkline: 14-day line, #1A1A1A, 1.5px stroke, no fill, no axes, 30px tall
+ 
+   Card 2 — BLOOD PRESSURE
+   - Label "BLOOD PRESSURE" — same style, accent #6B4E71
+   - Value "118/76" in Fraunces 36px #1A1A1A, "mmHg" beside in 14px #8C8C8C
+   - Status pill: "WITHIN RANGE" in Geist Sans uppercase 10px, letter-spaced,
+                  background #F0EBE0, text #3F6B4E, 4px radius, 6px horizontal padding
+   - Sparkline: dual-line (systolic darker, diastolic lighter #8C8C8C)
+ 
+   Card 3 — HBA1C
+   - Label "HBA1C" — accent #6B4E71
+   - Value "5.6" in Fraunces 36px #1A1A1A, "%" beside in 14px #8C8C8C
+   - Caption "Last 4 months" in Geist Mono 12px #8C8C8C
+   - Sparkline: 6-point line over months, #1A1A1A
+ 
+7. SECTION LABEL "THIS WEEK" (32px top margin)
+ 
+8. WEEKLY STATUS BLOCK
+   White card #FFFFFF, 1px border #E8E3D8, 12px corner radius, 18px padding.
+   Three stacked lines, 12px vertical gap:
+ 
+   - "5 of 7 days on water goal."
+     ↳ "5 of 7 days" in Geist Sans medium #1A1A1A,
+       rest in regular #5C5C5C.
+     ↳ Tiny status dot at row start: #3F6B4E, 6×6 circle.
+ 
+   - "BP stable across 4 readings."
+     ↳ "Stable" emphasized in medium #1A1A1A.
+     ↳ Status dot: #3F6B4E.
+ 
+   - "No missed medications."
+     ↳ "No missed" emphasized in medium #1A1A1A.
+     ↳ Status dot: #3F6B4E.
+ 
+9. BOTTOM TAB BAR (fixed, 56px height, 1px top border #E8E3D8)
+   Background #F7F4ED. Four equal-width tabs.
+ 
+   - Today      — Home icon (outline, 1.5px, 22×22), label "Today" in 10px Geist Sans medium #1A1A1A
+                  Active state: icon and label in #1A1A1A. A 2px wide × 18px tall vertical bar in #4A5D7E sits to the left of the icon (subtle active indicator, NOT a pill background).
+   - Library    — Layers icon, label "Library" — inactive #8C8C8C
+   - Insights   — Activity icon, label "Insights" — inactive #8C8C8C
+   - Settings   — Settings icon, label "Settings" — inactive #8C8C8C
+ 
+═══════════════════════════════════════════════
+SPACING & LAYOUT
+═══════════════════════════════════════════════
+- Horizontal padding: 20px on all main content
+- Section gap (label to first item): 16px
+- Section gap (between major sections): 32px
+- Timeline item vertical gap: 14px
+- Tab bar height: 56px
+- Safe area bottom: respected (don't let content sit under tab bar)
+ 
+═══════════════════════════════════════════════
+MOOD CHECK
+═══════════════════════════════════════════════
+The screen should feel like:
+- A page from a well-designed health journal, not a fitness app
+- Calm enough to look at first thing in the morning without effort
+- Trustworthy enough that a 50-year-old managing hypertension would believe the numbers
+- Restrained enough that nothing screams for attention — but rich enough that the eye finds rhythm and meaning in the small touches of category colour, the slate medication accents, the seafoam hydration tints, the warm clay activity marks
+ 
+NOT:
+- A wellness app screenshot meant for Instagram
+- A "trendy fintech" colour palette pretending to be healthcare
+- A monochrome graveyard with no signal at all
+ 
+References to draw from:
+- Apple Health's information hierarchy (but warmer)
+- Things 3's typographic confidence
+- One Medical's restraint
+- Monocle magazine's category-tinted layouts
+- New York Times Magazine's editorial elegance
+- Aesop's earthy product packaging
+- The New England Journal of Medicine's digital reading experience
 ```
+ 
+---
 
+## After you have a mockup you like
+
+1. Screenshot the result (PNG, full mobile frame).
+2. Save it to your workspace: `~/Code/vital/design-refs/today-screen.png`
+3. When you queue Prompt 7 in Claude Code, attach this image to the prompt — Claude Code reads images. Add a one-line preface:
+   > Reference image for the Today screen design is attached. The tokens and structure below match what's shown in the image. Where the image and prompt disagree, the prompt's hex codes and structural rules win.
+4. The image acts as a *visual contract*. Claude Code matches it within the constraints of the design tokens already in `src/theme/tokens.ts`.
+---
+
+## Updating the design tokens
+
+If you go with the richer category accents above, update `src/theme/tokens.ts` (after Prompt 6 finishes) to include them:
+
+// Category accents
+'categoryMedication': '#4A5D7E',
+'categoryHydration':  '#5B8A8F',
+'categoryActivity':   '#8B5A3C',
+'categoryNutrition':  '#7A6F4D',
+'categoryVitals':     '#6B4E71',
+'categoryCustom':     '#6B6F4D',
+
+// Updated status
+'missed':   '#B85C3C',   // muted terracotta
+'divider':  '#F0EBE0',
+
+// Updated background — slightly warmer
+'bone':     '#F7F4ED',
+'hairline': '#E8E3D8',
+
+The original v2 spec uses a single teal accent. If you adopt the category-tinted version, do a search-replace in the v2 spec to update the tokens section. Or just paste the updates above into Prompt 6 when you run it: "use these tokens in src/theme/tokens.ts in addition to the ones in the spec."
 ---
 
 ## 8. Order of execution
@@ -1204,5 +1681,310 @@ Three independent capabilities:
 Data model is already ready. Reminder schema is already ready. Dashboard already reads from the same tables.
 
 ---
+# Prompt: Phase 1 Admin Panel
 
+**Repo:** `kyros-backend`
+**Depends on:** Prompts 0–5 (scaffold, models, schemas, API foundations, items, logs) must be complete.
+**Estimated time:** 90–120 min of Claude Code execution.
+**Reviewer time:** ~30 min — this prompt touches auth, so eyeball every middleware change.
+
+---
+
+## Context
+
+You are extending the existing FastAPI backend (`kyros-backend`) with a server-rendered HTML admin panel mounted at `/admin`. This is **Phase 1 admin** — single-user (the founder), behind HTTP Basic Auth, intentionally boring. Do not build a SPA. Do not add a frontend build step. Do not introduce a new framework. Jinja2 templates only.
+
+The admin panel coexists with the JSON API. The same FastAPI app serves both. The JSON API stays untouched.
+
+### Locked decisions for this prompt
+
+1. **Mount point:** all admin routes live under `/admin/*`. The root admin URL is `/admin/`.
+2. **Auth:** HTTP Basic Auth via FastAPI's `HTTPBasic` security. Credentials come from env vars `ADMIN_USERNAME` and `ADMIN_PASSWORD_HASH` (bcrypt hash, not plaintext). Failed auth returns 401 with `WWW-Authenticate: Basic`.
+3. **Rendering:** Jinja2 templates in `app/admin/templates/`. Static assets (one CSS file, no JS bundler) in `app/admin/static/`.
+4. **Read-mostly:** the only write actions in this prompt are (a) marking a consultation status, (b) discontinuing a tracked item, (c) toggling a reminder active flag. Everything else is read-only.
+5. **Confirmation pattern:** every write action renders a confirmation page where the admin must type a specific phrase (e.g. "DISCONTINUE") before the POST is accepted. Server validates the phrase. No JS-based confirmations.
+6. **Audit:** every admin action (including GETs on sensitive resources like individual user detail and consultation detail) writes an `audit_log` row with `actor_type='admin'`, `action='admin.<verb>.<resource>'`, and the full request path in `payload`.
+7. **No PHI in admin logs.** When writing application logs (structlog), redact `payload`, `metadata`, and any field named `notes`, `dose`, `lab_value`, or `result`. The admin UI itself can show these — but structlog must not.
+8. **Read replica not used.** Phase 1 has one Postgres. Admin queries hit the same DB but use `SELECT` with `statement_timeout = 5000ms` set at the session level to prevent a runaway admin query from killing the app.
+
+### What this prompt does NOT do
+
+- No role hierarchy. Add a `users.role` column (default `'user'`) for future use, but only `'superadmin'` is recognized. Don't build a permission system yet.
+- No CSV export. Add it in Phase 1.5.
+- No user impersonation. Add it in Phase 1.5.
+- No SQL console. Never.
+- No charts/graphs. Numbers in tables. If you want a chart later, add it then.
+- No password reset flow. If the admin loses access, they SSH into the EC2 box and re-set the env var.
+
+---
+
+## Required changes
+
+### 1. Add `kc_consultations` table (new)
+
+Marketing site booking flow lands here. Add to Alembic migrations.
+
+```sql
+CREATE TABLE kc_consultations (
+  id                UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  user_id           UUID REFERENCES users(id) ON DELETE SET NULL,
+  patient_name      TEXT NOT NULL,
+  patient_phone     TEXT NOT NULL,
+  patient_email     TEXT,
+  condition_category TEXT,
+  preferred_slot    TIMESTAMPTZ,
+  status            TEXT NOT NULL DEFAULT 'requested',
+                    -- 'requested' | 'scheduled' | 'completed' | 'cancelled' | 'no_show'
+  meeting_link      TEXT,
+  meeting_provider  TEXT,   -- 'zoom' | 'meet' | null
+  scheduled_at      TIMESTAMPTZ,
+  completed_at      TIMESTAMPTZ,
+  fee_paid_paise    INTEGER,
+  razorpay_payment_id TEXT,
+  source            TEXT NOT NULL DEFAULT 'web',  -- 'web' | 'admin' | 'whatsapp'
+  notes             TEXT,
+  created_at        TIMESTAMPTZ NOT NULL DEFAULT now(),
+  updated_at        TIMESTAMPTZ NOT NULL DEFAULT now()
+);
+CREATE INDEX idx_kc_consult_status ON kc_consultations(status, preferred_slot);
+CREATE INDEX idx_kc_consult_user ON kc_consultations(user_id);
+CREATE INDEX idx_kc_consult_phone ON kc_consultations(patient_phone);
+```
+
+Add corresponding SQLAlchemy model `app/clinic/models/consultation.py` (create the `app/clinic/models/` package if it doesn't exist). Follow the same `Mapped[]` style as existing wellness models.
+
+### 2. Add `users.role` column
+
+Alembic migration: `ALTER TABLE users ADD COLUMN role TEXT NOT NULL DEFAULT 'user';`
+
+Update the `User` SQLAlchemy model. Add a check constraint or simple validation that `role IN ('user', 'superadmin')` for now — keep room for future roles by not making it an enum type at the DB level.
+
+### 3. Admin app structure
+
+```
+app/admin/
+├── __init__.py
+├── auth.py              # HTTPBasic dependency, bcrypt verify
+├── deps.py              # require_admin() dependency, get_admin_db()
+├── routes/
+│   ├── __init__.py
+│   ├── dashboard.py     # GET /admin/
+│   ├── users.py         # GET /admin/users, GET /admin/users/{id}
+│   ├── items.py         # GET /admin/items, POST /admin/items/{id}/discontinue
+│   ├── reminders.py     # GET /admin/reminders, POST /admin/reminders/{id}/toggle
+│   ├── consultations.py # GET /admin/consultations, POST /admin/consultations/{id}/status
+│   ├── audit.py         # GET /admin/audit
+│   └── health.py        # GET /admin/health (system status)
+├── templates/
+│   ├── base.html
+│   ├── dashboard.html
+│   ├── users_list.html
+│   ├── user_detail.html
+│   ├── items_list.html
+│   ├── reminders_list.html
+│   ├── consultations_list.html
+│   ├── consultation_detail.html
+│   ├── audit_log.html
+│   ├── health.html
+│   └── confirm_action.html  # reusable confirmation page
+├── static/
+│   └── admin.css        # ~150 lines, no framework
+└── services/
+    ├── metrics.py       # all dashboard queries in one place
+    └── audit.py         # write_admin_audit(action, resource_type, resource_id, payload)
+```
+
+Register the admin router in `app/main.py` AFTER the JSON API routers, mounted at `/admin`. Mount the static dir at `/admin/static`.
+
+### 4. The dashboard (`GET /admin/`)
+
+Render `dashboard.html` with these metrics. Compute all of them in `services/metrics.py` as separate functions so they can be unit-tested. Cache the result for 30 seconds in-process (a simple dict with a timestamp — don't reach for Redis for this).
+
+**Block 1: Users**
+- Total users
+- Active in last 7 days (any `audit_log` entry where `actor_type='user'`)
+- Active in last 30 days
+- New users in last 7 days
+- Users with email set (i.e. moved past guest mode)
+
+**Block 2: Tracked items**
+- Total by status: active / paused / discontinued
+- Total by category (medication, hydration, activity, nutrition, vitals, custom)
+- Items created in last 7 days
+- Items discontinued in last 7 days
+
+**Block 3: Reminders & adherence**
+- Total reminders, active reminders
+- Fires expected per day (sum from `expand_schedule` over next 24h)
+- Last 7 days adherence: `taken / (taken + skipped + missed)` across all log entries
+- Last 7 days missed count (reminders that fired with no log entry within 4 hours)
+
+**Block 4: Consultations**
+- Bookings in last 7 days
+- Status breakdown: requested / scheduled / completed / cancelled / no_show
+- Upcoming in next 48 hours (count)
+- Revenue last 30 days (sum of `fee_paid_paise` where status = 'completed')
+
+**Block 5: System**
+- DB connection: ok/fail (simple `SELECT 1` with timeout)
+- Redis connection: ok/fail
+- Last successful Alembic migration timestamp (read from `alembic_version`)
+- Disk usage on /var/lib/docker (call `shutil.disk_usage`)
+- Sentry link (just a static `<a>` to your Sentry project URL from env var `SENTRY_DASHBOARD_URL`)
+- Better Stack link (similar, from `UPTIME_DASHBOARD_URL`)
+
+**Block 6: Recent activity**
+- Last 20 rows from `audit_log`, newest first, with a "view full log" link to `/admin/audit`.
+
+### 5. List views
+
+Each list view supports:
+- Pagination via `?page=N&size=50` query params (server-side, simple LIMIT/OFFSET)
+- A free-text search box (only on users — searches phone / email / device_id with `ILIKE %query%`)
+- A status filter dropdown where applicable
+- Server-side sort by `created_at DESC` default
+
+`GET /admin/users` — columns: id (truncated), phone-or-device-id, email, tier, role, created_at, item_count, last_activity_at. Each row links to `/admin/users/{id}`.
+
+`GET /admin/users/{id}` — user detail page showing:
+- Identity block (id, device_id, email, phone, timezone, tier, role, created_at)
+- Tracked items table (all of them — link to items list filtered by this user)
+- Recent log entries (last 30)
+- Recent audit log entries for this user (last 30)
+- Linked Kyros consultations (if any)
+- **No edit buttons in this prompt.** View-only.
+
+`GET /admin/items` — columns: id, user (link), category, name, status, start_date, source, reminders_count. Filter by status, category, source. Action button per row: "Discontinue" (if status='active') → goes to confirmation page → POST `/admin/items/{id}/discontinue`.
+
+`GET /admin/reminders` — columns: id, item (link), schedule summary, channels, active. Toggle action per row: "Pause" / "Resume" → confirmation → POST `/admin/reminders/{id}/toggle`.
+
+`GET /admin/consultations` — columns: id, patient_name, patient_phone, condition_category, status, preferred_slot, fee_paid_paise. Filter by status. Each row links to `/admin/consultations/{id}`.
+
+`GET /admin/consultations/{id}` — full consultation detail. Form to update:
+- `status` dropdown (requested → scheduled → completed/cancelled/no_show)
+- `meeting_link` (text input)
+- `meeting_provider` (zoom/meet)
+- `scheduled_at` (datetime-local input)
+- `notes` (textarea)
+
+Submitting POSTs to `/admin/consultations/{id}/status` which renders confirmation page first.
+
+`GET /admin/audit` — paginated `audit_log` viewer. Filter by `actor_type`, `action`, `user_id`, date range. Newest first. JSON `payload` shown as `<pre>` formatted.
+
+### 6. Confirmation page pattern
+
+`templates/confirm_action.html` takes:
+- `action_label` — e.g. "Discontinue tracked item: Atorvastatin 10mg"
+- `action_description` — what will happen, in plain English
+- `confirmation_phrase` — the exact text the admin must type (e.g. `DISCONTINUE`)
+- `submit_url` — where the form posts
+- `cancel_url` — where the cancel button goes
+
+The route handler validates `request.form['confirmation']` equals `confirmation_phrase` (case-sensitive). If wrong, re-render with an error. If correct, perform the action, write audit log, redirect to the list view with a flash message.
+
+Use FastAPI's `Request` object for form parsing. No CSRF library needed for Phase 1 — Basic Auth with browser-stored credentials and the typed-phrase requirement are sufficient. (Add CSRF tokens in Phase 1.5 alongside the move to session-based auth.)
+
+### 7. The audit helper
+
+`services/audit.py` exposes one function:
+
+```python
+async def write_admin_audit(
+    db: AsyncSession,
+    request: Request,
+    action: str,
+    resource_type: str | None = None,
+    resource_id: UUID | None = None,
+    payload: dict | None = None,
+) -> None
+```
+
+Call this from every admin route — both reads (for sensitive views like user detail and consultation detail) and writes. The `request` is used to extract IP and user-agent. The acting admin's username goes into `payload['admin_username']`.
+
+Dashboard, list views, and the audit log viewer itself are NOT audited (would create infinite noise). Detail views and all writes ARE audited.
+
+### 8. Styling
+
+One CSS file. ~150 lines. Match the Kyros aesthetic from `kyros-design-decisions` skill if you can read it — restrained, serif headings (Fraunces if available via Google Fonts CDN, else Georgia), sans body (Inter via CDN, else system-ui). Otherwise just clean and boring:
+
+- Bone background (`#F7F4ED`), text `#1A1A1A`
+- Tables: hairline borders `#E8E3D8`, no zebra striping, generous padding
+- Buttons: bordered, no shadows. Destructive actions get a `#B85C3C` border.
+- Forms: stacked labels, full-width inputs
+- Top nav: simple horizontal bar with links to each section, current section underlined
+- No icons. No JavaScript. Forms submit and reload.
+
+The point is that admin should look like a 2010 internal tool. It's faster to read, faster to build, and signals the right "be careful, this is real data" tone.
+
+### 9. Environment variables to add
+
+Update `.env.example` and the settings module (`app/core/config.py`):
+
+```
+ADMIN_USERNAME=admin
+ADMIN_PASSWORD_HASH=<bcrypt hash, generate with passlib>
+SENTRY_DASHBOARD_URL=https://sentry.io/organizations/your-org/projects/kyros-backend/
+UPTIME_DASHBOARD_URL=https://uptime.betterstack.com/...
+ADMIN_SESSION_TIMEOUT_MINUTES=60   # informational only in Phase 1
+```
+
+Add a one-off CLI command `poetry run python -m app.admin.cli set-password` that prompts for a password and prints the bcrypt hash to stdout. The admin then puts that hash in `.env`. Do not write plaintext passwords to disk or logs.
+
+### 10. Tests
+
+In `tests/admin/`:
+- `test_auth.py` — 401 without creds, 401 with wrong creds, 200 with right creds, no caching of failed attempts in memory
+- `test_dashboard.py` — every metric function returns the right shape, dashboard renders 200 with all blocks
+- `test_confirmation.py` — wrong phrase rejects, right phrase commits, audit row written
+- `test_audit_redaction.py` — verify structlog output does NOT contain a known PHI field after an admin views a consultation that has notes
+
+Don't aim for 100% coverage. Cover auth, the confirmation pattern, and the redaction guarantee. Those are the load-bearing pieces.
+
+### 11. Documentation
+
+Add `docs/ADMIN.md`:
+- How to set the admin password (the CLI command)
+- The URL: `https://api.kyros.clinic/admin/` once Caddy is configured
+- The list of write actions and what they do
+- The audit log retention policy (forever, in Phase 1 — no purge job)
+- How to add a second admin in Phase 1.5 (preview: switch to `users.role='superadmin'` lookup instead of env-var auth)
+
+---
+
+## Acceptance criteria
+
+Before declaring this prompt done:
+
+1. `curl https://localhost/admin/` returns 401 with `WWW-Authenticate: Basic`.
+2. With valid Basic Auth, the dashboard loads in under 500ms on a t3.small with 1000 seeded users.
+3. Discontinuing an item via the admin UI sets `status='discontinued'` AND writes an `audit_log` row visible at `/admin/audit`.
+4. Typing the wrong confirmation phrase shows an inline error and does NOT mutate any data.
+5. `grep -r "X-Device-Id\|patient_phone\|notes\|dose" logs/` after an admin session shows zero PHI leaks.
+6. The booking endpoint for `www.kyros.clinic` is NOT in this prompt — it's a separate concern. Admin can only manage consultations that already exist. Bookings come from a future prompt.
+7. `mypy --strict app/admin/` passes.
+8. `ruff check app/admin/` passes.
+
+---
+
+## Things to NOT do (anti-checklist)
+
+- ❌ Don't add React, HTMX, Alpine, or any client-side framework.
+- ❌ Don't add a SQL console or "raw query" endpoint.
+- ❌ Don't add user impersonation. Deferred to Phase 1.5.
+- ❌ Don't add CSV export. Deferred to Phase 1.5.
+- ❌ Don't add charts. Numbers in tables only.
+- ❌ Don't add role management UI. The role column is for future use.
+- ❌ Don't add password change UI. CLI only in Phase 1.
+- ❌ Don't add session-based auth. HTTP Basic is sufficient for one admin.
+- ❌ Don't add a "delete user" action. Soft-delete only, and not from admin in Phase 1.
+- ❌ Don't add prescription writing. That's Phase 2.
+- ❌ Don't add the booking form endpoint. Separate prompt.
+
+If any of these feel necessary while implementing, stop and ask before doing them. The constraint is the point.
+
+---
+
+## Deliverable
+
+A working `/admin/` mount on the FastAPI backend, behind HTTP Basic Auth, that lets a single founder-admin see what's happening in the database, manage consultations, and discontinue items — without ever giving them a sharp enough tool to hurt themselves with at 2am.
 *End of build spec v2.*

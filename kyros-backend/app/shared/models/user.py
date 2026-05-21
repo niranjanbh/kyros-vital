@@ -1,7 +1,7 @@
 import uuid
 from datetime import datetime
 
-from sqlalchemy import TIMESTAMP, Text, func, text
+from sqlalchemy import TIMESTAMP, Boolean, CheckConstraint, Text, func, text
 from sqlalchemy.dialects.postgresql import UUID
 from sqlalchemy.orm import Mapped, mapped_column
 
@@ -19,11 +19,17 @@ class User(Base):
     kyros_patient_id: Mapped[str | None] = mapped_column(Text)
     subscription_tier: Mapped[str] = mapped_column(Text, server_default=text("'free'"))
     timezone: Mapped[str] = mapped_column(Text, server_default=text("'Asia/Kolkata'"))
+    role: Mapped[str] = mapped_column(Text, nullable=False, server_default=text("'user'"))
+    is_active: Mapped[bool] = mapped_column(Boolean, nullable=False, server_default=text("true"))
     created_at: Mapped[datetime] = mapped_column(
         TIMESTAMP(timezone=True), server_default=text("now()")
     )
     updated_at: Mapped[datetime] = mapped_column(
         TIMESTAMP(timezone=True), server_default=text("now()"), onupdate=func.now()
+    )
+
+    __table_args__ = (
+        CheckConstraint("role IN ('user', 'superadmin')", name="ck_users_role"),
     )
 
     def __repr__(self) -> str:

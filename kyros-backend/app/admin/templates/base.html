@@ -1,0 +1,26 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>{{ title }} — Kyros Admin</title>
+  <link rel="stylesheet" href="/admin/static/admin.css">
+</head>
+<body>
+  <nav>
+    <a href="/admin/" class="brand">Kyros Admin</a>
+    <a href="/admin/" {% if request.url.path == '/admin/' %}class="active"{% endif %}>Dashboard</a>
+    <a href="/admin/users" {% if '/admin/users' in request.url.path %}class="active"{% endif %}>Users</a>
+    <a href="/admin/items" {% if '/admin/items' in request.url.path %}class="active"{% endif %}>Items</a>
+    <a href="/admin/reminders" {% if '/admin/reminders' in request.url.path %}class="active"{% endif %}>Reminders</a>
+    <a href="/admin/consultations" {% if '/admin/consultations' in request.url.path %}class="active"{% endif %}>Consultations</a>
+    <a href="/admin/audit" {% if '/admin/audit' in request.url.path %}class="active"{% endif %}>Audit</a>
+    <a href="/admin/health" {% if '/admin/health' in request.url.path %}class="active"{% endif %}>Health</a>
+    <span class="spacer"></span>
+    <span class="admin-label">{{ admin }}</span>
+  </nav>
+  <main>
+    {% block content %}{% endblock %}
+  </main>
+</body>
+</html>

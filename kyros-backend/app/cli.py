@@ -2,7 +2,10 @@ import json
 
 import typer
 
+from app.admin.cli import app_admin_cli
+
 app_cli = typer.Typer(name="kyros", help="Kyros backend CLI.")
+app_cli.add_typer(app_admin_cli, name="admin")
 
 
 @app_cli.command()

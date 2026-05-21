@@ -46,6 +46,16 @@ class AuthError(AppError):
     code = "unauthorized"
 
 
+class FileTooLargeError(AppError):
+    status_code = status.HTTP_413_REQUEST_ENTITY_TOO_LARGE
+    code = "file_too_large"
+
+
+class UnsupportedMediaTypeError(AppError):
+    status_code = status.HTTP_415_UNSUPPORTED_MEDIA_TYPE
+    code = "unsupported_media_type"
+
+
 def _error_body(
     code: str,
     message: str,

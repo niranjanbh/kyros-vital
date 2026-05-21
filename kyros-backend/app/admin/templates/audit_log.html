@@ -1,0 +1,74 @@
+{% extends "base.html" %}
+{% block content %}
+<h1>Audit Log</h1>
+
+<form method="get" class="filter-bar">
+  <div class="form-group" style="margin:0;">
+    <select name="actor_type">
+      <option value="">All actors</option>
+      {% for at in ['user','admin','system'] %}
+      <option value="{{ at }}" {% if filter_actor_type == at %}selected{% endif %}>{{ at }}</option>
+      {% endfor %}
+    </select>
+  </div>
+  <div class="form-group" style="margin:0;">
+    <input type="text" name="action" value="{{ filter_action }}" placeholder="Action contains…" style="width:220px;">
+  </div>
+  <div class="form-group" style="margin:0;">
+    <input type="text" name="user_id" value="{{ filter_user_id }}" placeholder="User UUID" style="width:180px;">
+  </div>
+  <div class="form-group" style="margin:0;">
+    <input type="date" name="from_date" value="{{ filter_from_date }}">
+  </div>
+  <div class="form-group" style="margin:0;">
+    <input type="date" name="to_date" value="{{ filter_to_date }}">
+  </div>
+  <button type="submit" class="btn btn-sm">Filter</button>
+  <a href="/admin/audit" class="btn btn-sm">Clear</a>
+</form>
+
+<p class="muted" style="margin-bottom:16px;font-size:0.8rem;">
+  Showing {{ entries|length }} of {{ total }} entries (page {{ page }})
+</p>
+
+<div class="table-wrap">
+  <table>
+    <thead><tr>
+      <th>Time</th><th>Actor</th><th>User ID</th><th>Action</th>
+      <th>Resource type</th><th>Resource ID</th><th>IP</th><th>Payload</th>
+    </tr></thead>
+    <tbody>
+      {% for entry in entries %}
+      <tr>
+        <td class="mono">{{ entry.occurred_at.strftime('%Y-%m-%d %H:%M:%S') }}</td>
+        <td><span class="badge badge-{{ entry.actor_type }}">{{ entry.actor_type }}</span></td>
+        <td class="mono muted">{{ str(entry.user_id)[:8] if entry.user_id else '—' }}</td>
+        <td class="mono">{{ entry.action }}</td>
+        <td class="muted">{{ entry.resource_type or '—' }}</td>
+        <td class="mono muted">{{ str(entry.resource_id)[:8] if entry.resource_id else '—' }}</td>
+        <td class="mono muted">{{ entry.ip_address or '—' }}</td>
+        <td>
+          {% if entry.payload %}
+          <pre>{{ entry.payload | tojson(indent=2) }}</pre>
+          {% else %}
+          <span class="muted">—</span>
+          {% endif %}
+        </td>
+      </tr>
+      {% else %}
+      <tr><td colspan="8" class="muted">No entries found.</td></tr>
+      {% endfor %}
+    </tbody>
+  </table>
+</div>
+
+<div class="pagination">
+  {% if page > 1 %}
+  <a href="?page={{ page - 1 }}&actor_type={{ filter_actor_type }}&action={{ filter_action }}&user_id={{ filter_user_id }}&from_date={{ filter_from_date }}&to_date={{ filter_to_date }}">&larr; Prev</a>
+  {% endif %}
+  <span>Page {{ page }}</span>
+  {% if entries|length == page_size %}
+  <a href="?page={{ page + 1 }}&actor_type={{ filter_actor_type }}&action={{ filter_action }}&user_id={{ filter_user_id }}&from_date={{ filter_from_date }}&to_date={{ filter_to_date }}">Next &rarr;</a>
+  {% endif %}
+</div>
+{% endblock %}

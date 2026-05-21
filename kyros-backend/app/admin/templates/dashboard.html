@@ -1,0 +1,130 @@
+{% extends "base.html" %}
+{% block content %}
+<h1>Dashboard</h1>
+
+<!-- Block 1: Users -->
+<div class="section">
+  <h3>Users</h3>
+  <div class="metric-grid">
+    <div class="metric-card"><div class="label">Total</div><div class="value">{{ metrics.users.total }}</div></div>
+    <div class="metric-card"><div class="label">Active 7d</div><div class="value">{{ metrics.users.active_7d }}</div></div>
+    <div class="metric-card"><div class="label">Active 30d</div><div class="value">{{ metrics.users.active_30d }}</div></div>
+    <div class="metric-card"><div class="label">New 7d</div><div class="value">{{ metrics.users.new_7d }}</div></div>
+    <div class="metric-card"><div class="label">With email</div><div class="value">{{ metrics.users.with_email }}</div></div>
+  </div>
+</div>
+
+<!-- Block 2: Tracked Items -->
+<div class="section">
+  <h3>Tracked Items</h3>
+  <div class="metric-grid">
+    {% for status, cnt in metrics['tracked_items']['by_status'].items() %}
+    <div class="metric-card"><div class="label">{{ status }}</div><div class="value">{{ cnt }}</div></div>
+    {% endfor %}
+    <div class="metric-card"><div class="label">Created 7d</div><div class="value">{{ metrics['tracked_items']['created_7d'] }}</div></div>
+    <div class="metric-card"><div class="label">Discontinued 7d</div><div class="value">{{ metrics['tracked_items']['discontinued_7d'] }}</div></div>
+  </div>
+  <h3 style="margin-top:16px;">By category</h3>
+  <div class="metric-grid">
+    {% for cat, cnt in metrics['tracked_items']['by_category'].items() %}
+    <div class="metric-card"><div class="label">{{ cat }}</div><div class="value">{{ cnt }}</div></div>
+    {% endfor %}
+  </div>
+</div>
+
+<!-- Block 3: Reminders -->
+<div class="section">
+  <h3>Reminders &amp; Adherence</h3>
+  <div class="metric-grid">
+    <div class="metric-card"><div class="label">Total</div><div class="value">{{ metrics.reminders.total }}</div></div>
+    <div class="metric-card"><div class="label">Active</div><div class="value">{{ metrics.reminders.active }}</div></div>
+    <div class="metric-card"><div class="label">Taken 7d</div><div class="value">{{ metrics.reminders.adherence_7d.taken }}</div></div>
+    <div class="metric-card"><div class="label">Skipped 7d</div><div class="value">{{ metrics.reminders.adherence_7d.skipped }}</div></div>
+    <div class="metric-card">
+      <div class="label">Adherence rate</div>
+      <div class="value">
+        {% if metrics.reminders.adherence_7d.rate is not none %}
+          {{ "%.0f"|format(metrics.reminders.adherence_7d.rate * 100) }}%
+        {% else %}—{% endif %}
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Block 4: Consultations -->
+<div class="section">
+  <h3>Consultations</h3>
+  <div class="metric-grid">
+    <div class="metric-card"><div class="label">Bookings 7d</div><div class="value">{{ metrics.consultations.last_7d }}</div></div>
+    <div class="metric-card"><div class="label">Upcoming 48h</div><div class="value">{{ metrics.consultations.upcoming_48h }}</div></div>
+    <div class="metric-card">
+      <div class="label">Revenue 30d</div>
+      <div class="value">₹{{ "%.0f"|format(metrics.consultations.revenue_30d_rupees) }}</div>
+    </div>
+    {% for status, cnt in metrics.consultations.by_status.items() %}
+    <div class="metric-card"><div class="label">{{ status }}</div><div class="value">{{ cnt }}</div></div>
+    {% endfor %}
+  </div>
+</div>
+
+<!-- Block 5: System -->
+<div class="section">
+  <h3>System</h3>
+  <div class="metric-grid">
+    <div class="metric-card">
+      <div class="label">Database</div>
+      <div class="value" style="font-size:1.1rem;color:{% if metrics.system.db_ok %}var(--positive){% else %}var(--critical){% endif %}">
+        {% if metrics.system.db_ok %}ok{% else %}fail{% endif %}
+      </div>
+    </div>
+    <div class="metric-card">
+      <div class="label">Alembic rev</div>
+      <div class="value" style="font-size:0.85rem;font-family:monospace;">{{ metrics.system.alembic_version }}</div>
+    </div>
+    {% if metrics.system.disk %}
+    <div class="metric-card">
+      <div class="label">Disk used</div>
+      <div class="value">{{ metrics.system.disk.used_pct }}%</div>
+      <div class="muted" style="font-size:0.75rem;">{{ metrics.system.disk.used_gb }} / {{ metrics.system.disk.total_gb }} GB</div>
+    </div>
+    {% endif %}
+    {% if sentry_url %}
+    <div class="metric-card">
+      <div class="label">Sentry</div>
+      <div style="margin-top:6px;"><a href="{{ sentry_url }}" target="_blank">Open Sentry</a></div>
+    </div>
+    {% endif %}
+    {% if uptime_url %}
+    <div class="metric-card">
+      <div class="label">Uptime</div>
+      <div style="margin-top:6px;"><a href="{{ uptime_url }}" target="_blank">Open Better Stack</a></div>
+    </div>
+    {% endif %}
+  </div>
+</div>
+
+<!-- Block 6: Recent activity -->
+<div class="section">
+  <h2>Recent activity <a href="/admin/audit" style="font-size:0.8rem;margin-left:12px;">view full log</a></h2>
+  <div class="table-wrap">
+    <table>
+      <thead><tr>
+        <th>Time</th><th>Actor</th><th>Action</th><th>Resource</th><th>IP</th>
+      </tr></thead>
+      <tbody>
+        {% for entry in recent_audit %}
+        <tr>
+          <td class="mono">{{ entry.occurred_at.strftime('%m-%d %H:%M') }}</td>
+          <td><span class="badge badge-{{ entry.actor_type }}">{{ entry.actor_type }}</span></td>
+          <td class="mono">{{ entry.action }}</td>
+          <td class="muted">{{ entry.resource_type or '—' }}</td>
+          <td class="muted mono">{{ entry.ip_address or '—' }}</td>
+        </tr>
+        {% else %}
+        <tr><td colspan="5" class="muted">No activity yet.</td></tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</div>
+{% endblock %}

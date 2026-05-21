@@ -20,3 +20,5 @@ class UserRead(BaseModel):
 class UserUpdate(BaseModel):
     email: EmailStr | None = None
     timezone: str | None = None
+    # subscription_tier is admin-only — the route rejects it with 403
+    subscription_tier: str | None = None

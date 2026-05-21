@@ -1,0 +1,260 @@
+/* Kyros Admin — restrained internal tool aesthetic */
+@import url('https://fonts.googleapis.com/css2?family=Fraunces:wght@400;600&family=Inter:wght@400;500&display=swap');
+
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+:root {
+  --bg:        #F7F4ED;
+  --surface:   #FFFFFF;
+  --ink:       #1A1A1A;
+  --secondary: #595959;
+  --muted:     #8C8C8C;
+  --hairline:  #E8E3D8;
+  --accent:    #2D5F5D;
+  --positive:  #3F6B4E;
+  --warning:   #B07A1F;
+  --critical:  #8B2C1F;
+  --danger-border: #B85C3C;
+  --radius:    4px;
+}
+
+html { font-size: 15px; }
+
+body {
+  background: var(--bg);
+  color: var(--ink);
+  font-family: 'Inter', system-ui, sans-serif;
+  line-height: 1.55;
+  min-height: 100vh;
+}
+
+/* ── Nav ──────────────────────────────────────────────────────── */
+nav {
+  background: var(--surface);
+  border-bottom: 1px solid var(--hairline);
+  padding: 0 24px;
+  display: flex;
+  align-items: center;
+  gap: 32px;
+  height: 48px;
+}
+
+nav .brand {
+  font-family: 'Fraunces', Georgia, serif;
+  font-size: 1.1rem;
+  font-weight: 600;
+  color: var(--ink);
+  text-decoration: none;
+  margin-right: 16px;
+}
+
+nav a {
+  color: var(--secondary);
+  text-decoration: none;
+  font-size: 0.875rem;
+  padding-bottom: 3px;
+}
+
+nav a:hover { color: var(--ink); }
+nav a.active { color: var(--ink); border-bottom: 2px solid var(--ink); }
+
+nav .spacer { flex: 1; }
+nav .admin-label { font-size: 0.75rem; color: var(--muted); }
+
+/* ── Layout ───────────────────────────────────────────────────── */
+main { max-width: 1200px; margin: 0 auto; padding: 32px 24px; }
+
+h1 {
+  font-family: 'Fraunces', Georgia, serif;
+  font-size: 1.6rem;
+  font-weight: 600;
+  margin-bottom: 24px;
+}
+
+h2 {
+  font-family: 'Fraunces', Georgia, serif;
+  font-size: 1.15rem;
+  font-weight: 600;
+  margin-bottom: 12px;
+}
+
+h3 { font-size: 0.85rem; font-weight: 500; text-transform: uppercase;
+     letter-spacing: 0.06em; color: var(--muted); margin-bottom: 8px; }
+
+/* ── Alerts ───────────────────────────────────────────────────── */
+.alert {
+  padding: 10px 14px;
+  border: 1px solid;
+  border-radius: var(--radius);
+  margin-bottom: 20px;
+  font-size: 0.875rem;
+}
+.alert-ok      { border-color: var(--positive); color: var(--positive); }
+.alert-error   { border-color: var(--critical); color: var(--critical); }
+.alert-warning { border-color: var(--warning);  color: var(--warning); }
+
+/* ── Metric grid ──────────────────────────────────────────────── */
+.metric-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+  gap: 12px;
+  margin-bottom: 32px;
+}
+
+.metric-card {
+  background: var(--surface);
+  border: 1px solid var(--hairline);
+  border-radius: var(--radius);
+  padding: 16px;
+}
+
+.metric-card .label {
+  font-size: 0.7rem;
+  text-transform: uppercase;
+  letter-spacing: 0.07em;
+  color: var(--muted);
+  margin-bottom: 4px;
+}
+
+.metric-card .value {
+  font-family: 'Fraunces', Georgia, serif;
+  font-size: 2rem;
+  font-weight: 600;
+  line-height: 1.1;
+}
+
+/* ── Tables ───────────────────────────────────────────────────── */
+.table-wrap { overflow-x: auto; margin-bottom: 24px; }
+
+table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 0.875rem;
+}
+
+thead th {
+  text-align: left;
+  padding: 10px 12px;
+  font-size: 0.7rem;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: var(--muted);
+  border-bottom: 1px solid var(--hairline);
+  white-space: nowrap;
+}
+
+tbody td {
+  padding: 10px 12px;
+  border-bottom: 1px solid var(--hairline);
+  vertical-align: top;
+}
+
+tbody tr:last-child td { border-bottom: none; }
+tbody tr:hover td { background: #FAFAF7; }
+
+/* ── Buttons ──────────────────────────────────────────────────── */
+.btn {
+  display: inline-block;
+  padding: 7px 14px;
+  border: 1px solid var(--ink);
+  border-radius: var(--radius);
+  font-size: 0.8rem;
+  font-weight: 500;
+  text-decoration: none;
+  cursor: pointer;
+  background: transparent;
+  color: var(--ink);
+  line-height: 1.4;
+}
+.btn:hover { background: var(--bg); }
+.btn-primary { background: var(--accent); border-color: var(--accent); color: #fff; }
+.btn-primary:hover { opacity: 0.9; }
+.btn-danger { border-color: var(--danger-border); color: var(--danger-border); }
+.btn-sm { padding: 4px 10px; font-size: 0.75rem; }
+
+/* ── Forms ────────────────────────────────────────────────────── */
+.form-group { margin-bottom: 16px; }
+.form-group label { display: block; font-size: 0.8rem; font-weight: 500; margin-bottom: 4px; }
+.form-group input,
+.form-group select,
+.form-group textarea {
+  width: 100%;
+  padding: 8px 10px;
+  border: 1px solid var(--hairline);
+  border-radius: var(--radius);
+  font-size: 0.875rem;
+  font-family: inherit;
+  background: var(--surface);
+  color: var(--ink);
+}
+.form-group input:focus,
+.form-group select:focus,
+.form-group textarea:focus {
+  outline: none;
+  border-color: var(--ink);
+}
+.form-group textarea { min-height: 80px; resize: vertical; }
+
+/* ── Filters bar ──────────────────────────────────────────────── */
+.filter-bar {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+  align-items: flex-end;
+  margin-bottom: 20px;
+}
+
+.filter-bar input,
+.filter-bar select { padding: 6px 10px; font-size: 0.8rem; width: auto; }
+
+/* ── Pagination ───────────────────────────────────────────────── */
+.pagination { display: flex; gap: 8px; align-items: center; margin-top: 16px; font-size: 0.875rem; }
+.pagination a { color: var(--accent); text-decoration: none; }
+
+/* ── Confirmation block ───────────────────────────────────────── */
+.confirm-box {
+  max-width: 520px;
+  background: var(--surface);
+  border: 1px solid var(--hairline);
+  border-radius: var(--radius);
+  padding: 32px;
+}
+.confirm-box .phrase {
+  font-family: monospace;
+  font-size: 1rem;
+  font-weight: 600;
+  color: var(--danger-border);
+  background: #FEF3EE;
+  padding: 6px 12px;
+  border-radius: var(--radius);
+  display: inline-block;
+  margin: 12px 0;
+}
+
+/* ── Status badges ────────────────────────────────────────────── */
+.badge {
+  display: inline-block;
+  padding: 2px 8px;
+  border-radius: 2px;
+  font-size: 0.7rem;
+  font-weight: 500;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+.badge-active    { color: var(--positive); border: 1px solid var(--positive); }
+.badge-paused    { color: var(--warning);  border: 1px solid var(--warning); }
+.badge-discontinued,
+.badge-cancelled { color: var(--muted);    border: 1px solid var(--hairline); }
+.badge-requested { color: var(--warning);  border: 1px solid var(--warning); }
+.badge-scheduled { color: var(--accent);   border: 1px solid var(--accent); }
+.badge-completed { color: var(--positive); border: 1px solid var(--positive); }
+.badge-no_show   { color: var(--critical); border: 1px solid var(--critical); }
+
+/* ── Misc ─────────────────────────────────────────────────────── */
+.mono { font-family: monospace; font-size: 0.8rem; }
+.muted { color: var(--muted); }
+a { color: var(--accent); }
+pre { font-size: 0.75rem; white-space: pre-wrap; word-break: break-all;
+      background: var(--bg); padding: 8px; border-radius: var(--radius); }
+.section { margin-bottom: 40px; }
+hr { border: none; border-top: 1px solid var(--hairline); margin: 24px 0; }
