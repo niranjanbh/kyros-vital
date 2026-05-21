@@ -12,6 +12,9 @@
     <table>
       <tbody>
         <tr><td><strong>ID</strong></td><td class="mono">{{ user.id }}</td></tr>
+        <tr><td><strong>Name</strong></td><td>{{ user.name or '—' }}</td></tr>
+        <tr><td><strong>Age</strong></td><td>{{ user.age or '—' }}</td></tr>
+        <tr><td><strong>Gender</strong></td><td>{{ user.gender or '—' }}</td></tr>
         <tr><td><strong>Device ID</strong></td><td class="mono">{{ user.device_id or '—' }}</td></tr>
         <tr><td><strong>Kyros patient ID</strong></td><td class="mono">{{ user.kyros_patient_id or '—' }}</td></tr>
         <tr><td><strong>Status</strong></td>
@@ -35,6 +38,24 @@
 <div class="section">
   <h2>Edit preliminary data</h2>
   <form method="post" action="/admin/users/{{ user.id }}/edit" style="max-width:420px;">
+    <div class="form-group">
+      <label for="name">Full name</label>
+      <input type="text" name="name" id="name" value="{{ user.name or '' }}" placeholder="Aarav Shah">
+    </div>
+    <div class="form-group">
+      <label for="age">Age</label>
+      <input type="number" name="age" id="age" value="{{ user.age or '' }}" min="1" max="129" placeholder="32">
+    </div>
+    <div class="form-group">
+      <label for="gender">Gender</label>
+      <select name="gender" id="gender">
+        <option value="">— not set —</option>
+        <option value="male" {% if user.gender == 'male' %}selected{% endif %}>Male</option>
+        <option value="female" {% if user.gender == 'female' %}selected{% endif %}>Female</option>
+        <option value="other" {% if user.gender == 'other' %}selected{% endif %}>Other</option>
+        <option value="prefer_not_to_say" {% if user.gender == 'prefer_not_to_say' %}selected{% endif %}>Prefer not to say</option>
+      </select>
+    </div>
     <div class="form-group">
       <label for="email">Email</label>
       <input type="email" name="email" id="email" value="{{ user.email or '' }}" placeholder="user@example.com">

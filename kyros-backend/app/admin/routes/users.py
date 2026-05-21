@@ -133,6 +133,9 @@ async def user_detail(
 async def user_edit(
     user_id: uuid.UUID,
     request: Request,
+    name: str = Form(default=""),
+    age: str = Form(default=""),
+    gender: str = Form(default=""),
     email: str = Form(default=""),
     timezone: str = Form(default=""),
     subscription_tier: str = Form(default=""),
@@ -146,6 +149,31 @@ async def user_edit(
         return RedirectResponse(url="/admin/users?error=User+not+found", status_code=303)
 
     changed: dict[str, str] = {}
+
+    stripped_name = name.strip()
+    if stripped_name != (user.name or ""):
+        user.name = stripped_name or None
+        changed["name"] = stripped_name
+
+    if age:
+        try:
+            age_int = int(age)
+            if 0 < age_int < 130 and age_int != user.age:
+                user.age = age_int
+                changed["age"] = age
+        except ValueError:
+            pass
+    elif age == "" and user.age is not None:
+        user.age = None
+        changed["age"] = ""
+
+    _VALID_GENDERS = ("male", "female", "other", "prefer_not_to_say")
+    if gender in _VALID_GENDERS and gender != user.gender:
+        user.gender = gender
+        changed["gender"] = gender
+    elif gender == "" and user.gender is not None:
+        user.gender = None
+        changed["gender"] = ""
 
     if email and email != user.email:
         user.email = email.strip() or None

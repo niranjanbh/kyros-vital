@@ -21,6 +21,7 @@
   <table>
     <thead><tr>
       <th>ID</th>
+      <th>Name</th>
       <th>Identity</th>
       <th>Email</th>
       <th>Tier</th>
@@ -32,6 +33,7 @@
       {% for user in users %}
       <tr>
         <td><a href="/admin/users/{{ user.id }}" class="mono">{{ str(user.id)[:8] }}…</a></td>
+        <td>{{ user.name or '—' }}</td>
         <td class="mono">{{ user.device_id or '—' }}</td>
         <td>{{ user.email or '—' }}</td>
         <td>{{ user.subscription_tier }}</td>

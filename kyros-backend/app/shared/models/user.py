@@ -1,7 +1,7 @@
 import uuid
 from datetime import datetime
 
-from sqlalchemy import TIMESTAMP, Boolean, CheckConstraint, Text, func, text
+from sqlalchemy import TIMESTAMP, Boolean, CheckConstraint, Integer, Text, func, text
 from sqlalchemy.dialects.postgresql import UUID
 from sqlalchemy.orm import Mapped, mapped_column
 
@@ -15,6 +15,9 @@ class User(Base):
         UUID(as_uuid=True), primary_key=True, server_default=text("gen_random_uuid()")
     )
     device_id: Mapped[str | None] = mapped_column(Text, index=True)
+    name: Mapped[str | None] = mapped_column(Text)
+    age: Mapped[int | None] = mapped_column(Integer)
+    gender: Mapped[str | None] = mapped_column(Text)
     email: Mapped[str | None] = mapped_column(Text, unique=True)
     kyros_patient_id: Mapped[str | None] = mapped_column(Text)
     subscription_tier: Mapped[str] = mapped_column(Text, server_default=text("'free'"))
@@ -30,6 +33,10 @@ class User(Base):
 
     __table_args__ = (
         CheckConstraint("role IN ('user', 'superadmin')", name="ck_users_role"),
+        CheckConstraint(
+            "gender IN ('male', 'female', 'other', 'prefer_not_to_say')",
+            name="ck_users_gender",
+        ),
     )
 
     def __repr__(self) -> str:
