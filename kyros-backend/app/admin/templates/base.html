@@ -15,6 +15,7 @@
     <a href="/admin/reminders" {% if '/admin/reminders' in request.url.path %}class="active"{% endif %}>Reminders</a>
     <a href="/admin/consultations" {% if '/admin/consultations' in request.url.path %}class="active"{% endif %}>Consultations</a>
     <a href="/admin/audit" {% if '/admin/audit' in request.url.path %}class="active"{% endif %}>Audit</a>
+    <a href="/admin/errors" {% if '/admin/errors' in request.url.path %}class="active"{% endif %} style="{% if '/admin/errors' not in request.url.path %}color:var(--warning);{% endif %}">Errors</a>
     <a href="/admin/health" {% if '/admin/health' in request.url.path %}class="active"{% endif %}>Health</a>
     <span class="spacer"></span>
     <span class="admin-label">{{ admin }}</span>

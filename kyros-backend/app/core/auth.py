@@ -1,3 +1,4 @@
+import hashlib
 import re
 
 import structlog
@@ -42,7 +43,9 @@ async def get_current_user(
         await db.flush()
         result = await db.execute(select(User).where(User.device_id == device_id))
         user = result.scalar_one()
-        log.info("user.created", device_id=device_id, user_id=str(user.id))
+        # Log a short hash, never the raw device_id (it is the authentication credential)
+        device_id_hint = hashlib.sha256(device_id.encode()).hexdigest()[:12]
+        log.info("user.created", device_id_hint=device_id_hint, user_id=str(user.id))
         request.state.user_created = True
     else:
         request.state.user_created = False

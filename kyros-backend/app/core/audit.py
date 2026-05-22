@@ -13,7 +13,16 @@ from starlette.types import ASGIApp
 log = structlog.get_logger(__name__)
 
 _MUTATING_METHODS = {"POST", "PATCH", "PUT", "DELETE"}
-_PII_KEYS = {"password", "email", "phone", "token", "secret", "authorization"}
+_PII_KEYS = {
+    # Auth / credentials
+    "password", "token", "secret", "authorization",
+    # Contact info
+    "email", "phone",
+    # Healthcare-specific PHI
+    "drug_name", "dosage", "dose", "condition", "diagnosis",
+    "patient_name", "patient_phone", "patient_email",
+    "lab_value", "result", "parsed",
+}
 _UUID_RE = re.compile(
     r"\b[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}\b", re.IGNORECASE
 )

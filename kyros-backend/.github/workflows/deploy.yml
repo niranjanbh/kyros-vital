@@ -7,7 +7,7 @@ on:
 jobs:
   deploy:
     runs-on: ubuntu-latest
-    needs: []  # add test job name here when ready to gate deploys
+    needs: [test]   # deploy only after tests pass
 
     steps:
       - uses: actions/checkout@v4
@@ -19,8 +19,17 @@ jobs:
           username: ${{ secrets.EC2_USER }}
           key: ${{ secrets.EC2_SSH_KEY }}
           script: |
+            set -euo pipefail
             cd /opt/kyros-backend
+
+            # Backup before any migration
+            BACKUP_FILE="/backups/pre-deploy-$(date +%Y%m%d%H%M).sql.gz"
+            mkdir -p /backups
+            docker compose exec -T postgres pg_dump -U kyros kyros | gzip > "$BACKUP_FILE"
+            echo "Backup written to $BACKUP_FILE"
+
             git pull origin main
-            docker compose pull api
-            docker compose up -d --no-deps --build api
-            docker compose exec -T api poetry run alembic upgrade head
+            docker compose build api
+            docker compose exec -T api alembic upgrade head
+            docker compose up -d --no-deps api
+            echo "Deploy complete"

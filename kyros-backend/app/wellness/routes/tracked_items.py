@@ -181,6 +181,8 @@ async def create_item_reminder(
         schedule=body.schedule.model_dump(mode="json"),
         message_template=body.message_template,
         channels=body.channels,
+        snooze_minutes=body.snooze_minutes,
+        taken_window_minutes=body.taken_window_minutes,
     )
     db.add(reminder)
     await db.flush()

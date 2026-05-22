@@ -28,6 +28,10 @@ class Reminder(Base):
     channels: Mapped[list[str]] = mapped_column(
         ARRAY(Text), nullable=False, server_default=text("ARRAY['in_app']::text[]")
     )
+    snooze_minutes: Mapped[int] = mapped_column(
+        nullable=False, server_default=text("15")
+    )
+    taken_window_minutes: Mapped[int | None] = mapped_column(nullable=True)
     active: Mapped[bool] = mapped_column(Boolean, nullable=False, server_default=text("true"))
     created_at: Mapped[datetime] = mapped_column(
         TIMESTAMP(timezone=True), server_default=text("now()")

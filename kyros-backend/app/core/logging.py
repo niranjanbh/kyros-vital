@@ -60,11 +60,16 @@ def configure_logging() -> None:
     )
 
 
+_log = structlog.get_logger(__name__)
+
+
 class RequestIdMiddleware(BaseHTTPMiddleware):
     def __init__(self, app: ASGIApp) -> None:
         super().__init__(app)
 
     async def dispatch(self, request: Request, call_next: _CallNext) -> Response:
+        import time as _time
+
         request_id = str(uuid.uuid4())
         request_id_var.set(request_id)
         structlog.contextvars.clear_contextvars()
@@ -73,6 +78,21 @@ class RequestIdMiddleware(BaseHTTPMiddleware):
             method=request.method,
             path=request.url.path,
         )
+
+        t0 = _time.monotonic()
         response: Response = await call_next(request)
+        duration_ms = round((_time.monotonic() - t0) * 1000, 1)
+
         response.headers["X-Request-Id"] = request_id
+
+        # Emit one structured log line per request so latency is always observable.
+        # Admin and health routes are excluded (high volume, low signal).
+        skip = request.url.path.startswith(("/admin", "/health", "/docs", "/redoc", "/openapi"))
+        if not skip:
+            _log.info(
+                "request.completed",
+                status=response.status_code,
+                duration_ms=duration_ms,
+            )
+
         return response

@@ -4,6 +4,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.auth import get_current_user
 from app.core.exceptions import ForbiddenError
+from app.core.rate_limit import limiter
 from app.database import get_db
 from app.shared.models.user import User
 from app.shared.schemas.user import UserRead, UserUpdate
@@ -13,6 +14,7 @@ router = APIRouter(prefix="/v1/users", tags=["Users"])
 
 
 @router.post("/guest", response_model=UserRead, status_code=status.HTTP_200_OK)
+@limiter.limit("10/minute")  # keyed on IP — prevents device_id farming
 async def create_guest(
     request: Request,
     response: Response,

@@ -33,3 +33,4 @@ class LogEntryCreate(BaseModel):
     fire_key: str | None = None
     value: dict[str, Any] = Field(default_factory=dict)
     note: str | None = None
+    snooze_minutes: int | None = None

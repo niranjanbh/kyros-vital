@@ -4,7 +4,7 @@ import uuid
 from datetime import date, datetime
 from typing import TYPE_CHECKING, Annotated, Any, Literal
 
-from pydantic import AliasChoices, BaseModel, Field
+from pydantic import AliasChoices, BaseModel, Field, model_validator
 
 if TYPE_CHECKING:
     from app.wellness.schemas.reminder import ReminderRead
@@ -53,9 +53,15 @@ class CustomMeta(BaseModel):
 
 
 class _ItemCreateBase(BaseModel):
-    name: str
+    name: Annotated[str, Field(min_length=1, max_length=500)]
     start_date: date
     end_date: date | None = None
+
+    @model_validator(mode="after")
+    def _end_after_start(self) -> "_ItemCreateBase":
+        if self.end_date is not None and self.end_date < self.start_date:
+            raise ValueError("end_date must be on or after start_date")
+        return self
 
 
 class MedicationItemCreate(_ItemCreateBase):

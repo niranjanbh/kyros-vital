@@ -47,9 +47,12 @@ def _encode_cursor(created_at: datetime, report_id: uuid.UUID) -> str:
 
 
 def _decode_cursor(cursor: str) -> tuple[datetime, uuid.UUID]:
-    raw = base64.urlsafe_b64decode(cursor.encode()).decode()
-    ts_str, id_str = raw.split("|", 1)
-    return datetime.fromisoformat(ts_str), uuid.UUID(id_str)
+    try:
+        raw = base64.urlsafe_b64decode(cursor.encode()).decode()
+        ts_str, id_str = raw.split("|", 1)
+        return datetime.fromisoformat(ts_str), uuid.UUID(id_str)
+    except Exception as exc:
+        raise AppValidationError("Invalid cursor value.") from exc
 
 
 async def _get_report_or_404(
@@ -169,12 +172,15 @@ async def download_lab_file(
     report = await _get_report_or_404(report_id, current_user.id, db)
     if not report.file_url:
         raise NotFoundError("No file attached to this report.")
+    from urllib.parse import quote
     content = await get_storage().read(report.file_url)
     filename = report.file_url.rsplit("/", 1)[-1]
+    # RFC 5987 encoding keeps the header safe for non-ASCII characters
+    safe_filename = quote(filename, safe="")
     return FileResponse(
         content=content,
         media_type=report.file_mime or "application/octet-stream",
-        headers={"Content-Disposition": f'attachment; filename="{filename}"'},
+        headers={"Content-Disposition": f"attachment; filename*=UTF-8''{safe_filename}"},
     )
 
 

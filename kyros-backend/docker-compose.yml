@@ -1,10 +1,8 @@
-version: "3.9"
-
 services:
   postgres:
     image: postgres:16-alpine
     environment:
-      POSTGRES_USER: Kyros
+      POSTGRES_USER: kyros
       POSTGRES_PASSWORD: kyros
       POSTGRES_DB: kyros
     ports:
@@ -19,8 +17,11 @@ services:
 
   redis:
     image: redis:7-alpine
-    ports:
-      - "6379:6379"
+    # No host port exposure — only reachable from the api container
+    command: >
+      redis-server
+      --maxmemory 256mb
+      --maxmemory-policy allkeys-lru
     volumes:
       - redis_data:/data
     healthcheck:
@@ -32,13 +33,13 @@ services:
   api:
     build:
       context: .
-      target: builder
+      target: runtime          # non-root user; .venv baked in at /app/.venv
     command: >
-      poetry run uvicorn app.main:app
+      /app/.venv/bin/uvicorn app.main:app
       --host 0.0.0.0 --port 8000 --reload
     volumes:
-      - .:/app
-      - /app/.venv
+      - .:/app                 # live-reload: host code mounted into container
+      - /app/.venv             # anonymous volume: keeps the baked .venv intact
     ports:
       - "8000:8000"
     environment:
@@ -46,9 +47,12 @@ services:
       REDIS_URL: redis://redis:6379/0
       STORAGE_DIR: /app/storage
       STORAGE_BACKEND: local
-      SIGNING_SECRET: dev-signing-secret
+      SIGNING_SECRET: dev-signing-secret-change-before-production
       LOG_LEVEL: INFO
       ENV: development
+      ALLOWED_ORIGINS: "*"
+      ADMIN_USERNAME: Niranjan@kyros
+      ADMIN_PASSWORD_HASH: "$2b$12$1ax1Ihpbcdu/HGIQb4GUSOPI8ekwrfcN9.aSXmuswKpXnjgvBhqze"
     depends_on:
       postgres:
         condition: service_healthy

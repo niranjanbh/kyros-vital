@@ -65,6 +65,10 @@ async def update_reminder(
         reminder.message_template = body.message_template
     if body.channels is not None:
         reminder.channels = body.channels
+    if body.snooze_minutes is not None:
+        reminder.snooze_minutes = body.snooze_minutes
+    if body.taken_window_minutes is not None:
+        reminder.taken_window_minutes = body.taken_window_minutes
     if body.active is not None:
         reminder.active = body.active
     db.add(reminder)

@@ -30,9 +30,12 @@ def _encode_cursor(occurred_at: datetime, entry_id: uuid.UUID) -> str:
 
 
 def _decode_cursor(cursor: str) -> tuple[datetime, uuid.UUID]:
-    raw = base64.urlsafe_b64decode(cursor.encode()).decode()
-    ts_str, id_str = raw.split("|", 1)
-    return datetime.fromisoformat(ts_str), uuid.UUID(id_str)
+    try:
+        raw = base64.urlsafe_b64decode(cursor.encode()).decode()
+        ts_str, id_str = raw.split("|", 1)
+        return datetime.fromisoformat(ts_str), uuid.UUID(id_str)
+    except Exception as exc:
+        raise AppValidationError("Invalid cursor value.") from exc
 
 
 @router.post("/", response_model=LogEntryRead, status_code=status.HTTP_201_CREATED)
@@ -42,6 +45,10 @@ async def create_log_entry(
     current_user: User = Depends(get_current_user),
     db: AsyncSession = Depends(get_db),
 ) -> LogEntryRead:
+    merged_value = dict(body.value)
+    if body.snooze_minutes is not None:
+        merged_value["snooze_minutes"] = body.snooze_minutes
+
     values: dict = {
         "user_id": current_user.id,
         "tracked_item_id": body.tracked_item_id,
@@ -49,7 +56,7 @@ async def create_log_entry(
         "occurred_at": body.occurred_at,
         "reminder_id": body.reminder_id,
         "fire_key": body.fire_key,
-        "value": body.value,
+        "value": merged_value,
         "note": body.note,
     }
 
@@ -140,3 +147,23 @@ async def list_log_entries(
 
     result = await db.execute(stmt)
     return list(result.scalars().all())
+
+
+@router.delete("/{log_id}", status_code=status.HTTP_204_NO_CONTENT, response_model=None)
+async def delete_log_entry(
+    log_id: uuid.UUID,
+    current_user: User = Depends(get_current_user),
+    db: AsyncSession = Depends(get_db),
+) -> None:
+    """Hard delete a log entry (user-corrected record, not adherence history)."""
+    result = await db.execute(
+        select(LogEntry).where(
+            LogEntry.id == log_id,
+            LogEntry.user_id == current_user.id,
+        )
+    )
+    entry = result.scalar_one_or_none()
+    if entry is None:
+        raise NotFoundError("Log entry not found.")
+    await db.delete(entry)
+    await db.flush()

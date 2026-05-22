@@ -113,7 +113,7 @@ async def count_reminders(db: AsyncSession) -> tuple[int, int]:
 
 
 async def adherence_last_7_days(db: AsyncSession) -> dict[str, Any]:
-    """Taken/(taken+skipped) from log entries in last 7 days."""
+    """Global taken/(taken+skipped) from log entries in last 7 days."""
     cutoff = _now_utc() - timedelta(days=7)
     rows = await db.execute(
         select(LogEntry.action, func.count())
@@ -123,9 +123,53 @@ async def adherence_last_7_days(db: AsyncSession) -> dict[str, Any]:
     counts: dict[str, int] = dict(rows.all())
     taken = counts.get("taken", 0)
     skipped = counts.get("skipped", 0)
+    snoozed = counts.get("snoozed", 0)
+    logged = counts.get("logged_value", 0)
     denominator = taken + skipped
     rate: float | None = (taken / denominator) if denominator > 0 else None
-    return {"taken": taken, "skipped": skipped, "rate": rate}
+    return {
+        "taken": taken,
+        "skipped": skipped,
+        "snoozed": snoozed,
+        "logged_value": logged,
+        "rate": rate,
+    }
+
+
+async def adherence_by_category_7d(db: AsyncSession) -> list[dict[str, Any]]:
+    """Per-category adherence (taken rate) for the last 7 days.
+
+    Joins log_entries → tracked_items to get the category, then computes
+    taken/(taken+skipped) per category. Only categories with at least one
+    taken or skipped entry are included.
+    """
+    cutoff = _now_utc() - timedelta(days=7)
+    rows = await db.execute(
+        select(TrackedItem.category, LogEntry.action, func.count().label("cnt"))
+        .join(TrackedItem, LogEntry.tracked_item_id == TrackedItem.id)
+        .where(LogEntry.occurred_at >= cutoff)
+        .where(LogEntry.action.in_(["taken", "skipped", "logged_value"]))
+        .group_by(TrackedItem.category, LogEntry.action)
+    )
+
+    # Pivot into {category: {action: count}}
+    pivot: dict[str, dict[str, int]] = {}
+    for category, action, cnt in rows.all():
+        pivot.setdefault(category, {})[action] = cnt
+
+    result: list[dict[str, Any]] = []
+    for category, action_counts in sorted(pivot.items()):
+        taken = action_counts.get("taken", 0) + action_counts.get("logged_value", 0)
+        skipped = action_counts.get("skipped", 0)
+        denom = taken + skipped
+        result.append({
+            "category": category,
+            "taken": taken,
+            "skipped": skipped,
+            "rate": (taken / denom) if denom > 0 else None,
+        })
+
+    return result
 
 
 # ── Consultation metrics ──────────────────────────────────────────────────────
@@ -243,6 +287,7 @@ async def get_dashboard_metrics(db: AsyncSession) -> dict[str, Any]:
             "total": total_reminders,
             "active": active_reminders,
             "adherence_7d": adherence,
+            "adherence_by_category_7d": await adherence_by_category_7d(db),
         },
         # Block 4 — Consultations
         "consultations": {

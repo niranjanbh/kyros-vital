@@ -10,7 +10,7 @@ from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.auth import get_current_user
-from app.core.exceptions import NotFoundError
+from app.core.exceptions import AppValidationError, NotFoundError
 from app.database import get_db
 from app.shared.models.user import User
 from app.wellness.models.measurement import Measurement
@@ -33,9 +33,12 @@ def _encode_cursor(measured_at: datetime, entry_id: uuid.UUID) -> str:
 
 
 def _decode_cursor(cursor: str) -> tuple[datetime, uuid.UUID]:
-    raw = base64.urlsafe_b64decode(cursor.encode()).decode()
-    ts_str, id_str = raw.split("|", 1)
-    return datetime.fromisoformat(ts_str), uuid.UUID(id_str)
+    try:
+        raw = base64.urlsafe_b64decode(cursor.encode()).decode()
+        ts_str, id_str = raw.split("|", 1)
+        return datetime.fromisoformat(ts_str), uuid.UUID(id_str)
+    except Exception as exc:
+        raise AppValidationError("Invalid cursor value.") from exc
 
 
 async def _get_measurement_or_404(
@@ -93,6 +96,8 @@ async def list_measurements(
         .limit(limit)
     )
 
+    if from_ is not None and to is not None and from_ > to:
+        raise AppValidationError("'from' must be earlier than 'to'.")
     if type is not None:
         stmt = stmt.where(Measurement.type == type)
     if from_ is not None:

@@ -32,23 +32,52 @@
   </div>
 </div>
 
-<!-- Block 3: Reminders -->
+<!-- Block 3: Reminders & Adherence -->
 <div class="section">
-  <h3>Reminders &amp; Adherence</h3>
+  <h3>Reminders &amp; Adherence (last 7 days, all users)</h3>
   <div class="metric-grid">
-    <div class="metric-card"><div class="label">Total</div><div class="value">{{ metrics.reminders.total }}</div></div>
-    <div class="metric-card"><div class="label">Active</div><div class="value">{{ metrics.reminders.active }}</div></div>
+    <div class="metric-card"><div class="label">Total reminders</div><div class="value">{{ metrics.reminders.total }}</div></div>
+    <div class="metric-card"><div class="label">Active reminders</div><div class="value">{{ metrics.reminders.active }}</div></div>
     <div class="metric-card"><div class="label">Taken 7d</div><div class="value">{{ metrics.reminders.adherence_7d.taken }}</div></div>
     <div class="metric-card"><div class="label">Skipped 7d</div><div class="value">{{ metrics.reminders.adherence_7d.skipped }}</div></div>
+    <div class="metric-card"><div class="label">Snoozed 7d</div><div class="value">{{ metrics.reminders.adherence_7d.snoozed }}</div></div>
     <div class="metric-card">
-      <div class="label">Adherence rate</div>
-      <div class="value">
+      <div class="label">Overall rate</div>
+      <div class="value" style="color:{% if metrics.reminders.adherence_7d.rate is not none and metrics.reminders.adherence_7d.rate >= 0.8 %}var(--positive){% elif metrics.reminders.adherence_7d.rate is not none and metrics.reminders.adherence_7d.rate >= 0.5 %}var(--warning){% else %}var(--critical){% endif %};">
         {% if metrics.reminders.adherence_7d.rate is not none %}
           {{ "%.0f"|format(metrics.reminders.adherence_7d.rate * 100) }}%
         {% else %}—{% endif %}
       </div>
     </div>
   </div>
+
+  {% if metrics.reminders.adherence_by_category_7d %}
+  <h4 style="margin-top:16px;margin-bottom:8px;">By category</h4>
+  <div class="table-wrap">
+    <table>
+      <thead>
+        <tr><th>Category</th><th style="text-align:right;">Taken</th><th style="text-align:right;">Skipped</th><th style="text-align:right;">Rate</th></tr>
+      </thead>
+      <tbody>
+        {% for row in metrics.reminders.adherence_by_category_7d %}
+        <tr>
+          <td>{{ row.category }}</td>
+          <td style="text-align:right;" class="mono">{{ row.taken }}</td>
+          <td style="text-align:right;" class="mono">{{ row.skipped }}</td>
+          <td style="text-align:right;">
+            {% if row.rate is not none %}
+              {% set pct = (row.rate * 100)|round(0)|int %}
+              <span style="font-weight:600;color:{% if pct >= 80 %}var(--positive){% elif pct >= 50 %}var(--warning){% else %}var(--critical){% endif %};">
+                {{ pct }}%
+              </span>
+            {% else %}—{% endif %}
+          </td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+  {% endif %}
 </div>
 
 <!-- Block 4: Consultations -->

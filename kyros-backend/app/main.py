@@ -12,6 +12,7 @@ from slowapi.middleware import SlowAPIMiddleware
 from app.admin.routes import admin_router
 from app.config import settings
 from app.core.audit import AuditMiddleware
+from app.core.error_capture import ErrorCaptureMiddleware
 from app.core.exceptions import AppError, app_error_handler, generic_error_handler
 from app.core.logging import RequestIdMiddleware, configure_logging
 from app.core.rate_limit import limiter
@@ -47,12 +48,14 @@ def create_app() -> FastAPI:
     # Starlette stacks middleware LIFO — last added = outermost = first to execute.
     # Target execution order: request_id → CORS → audit → rate_limit → route
     app.add_middleware(SlowAPIMiddleware)  # innermost: rate-limit gate
+    app.add_middleware(ErrorCaptureMiddleware)  # captures 4xx/5xx to error_log
     app.add_middleware(AuditMiddleware)
+    _origins = [o.strip() for o in settings.ALLOWED_ORIGINS.split(",") if o.strip()]
     app.add_middleware(
         CORSMiddleware,
-        allow_origins=["*"],
-        allow_methods=["*"],
-        allow_headers=["*"],
+        allow_origins=['*'],
+        allow_methods=["GET", "POST", "PATCH", "DELETE", "OPTIONS"],
+        allow_headers=["Content-Type", "X-Device-Id", "X-Request-Id"],
     )
     app.add_middleware(RequestIdMiddleware)  # outermost: stamps request_id first
 
