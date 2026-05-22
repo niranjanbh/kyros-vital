@@ -1,0 +1,144 @@
+{% extends "base.html" %}
+{% block content %}
+
+{# Detect client type from user_agent #}
+{% if entry.user_agent %}
+  {% if 'Expo' in entry.user_agent or 'React Native' in entry.user_agent or 'okhttp' in entry.user_agent %}
+    {% set client_type = 'Mobile app (Expo / React Native)' %}
+  {% elif 'Mozilla' in entry.user_agent or 'Chrome' in entry.user_agent or 'Safari' in entry.user_agent %}
+    {% set client_type = 'Web browser' %}
+  {% elif 'curl' in entry.user_agent %}
+    {% set client_type = 'cURL' %}
+  {% elif 'python' in entry.user_agent or 'httpx' in entry.user_agent %}
+    {% set client_type = 'Python / automated client' %}
+  {% else %}
+    {% set client_type = entry.user_agent[:60] %}
+  {% endif %}
+{% else %}
+  {% set client_type = 'Unknown' %}
+{% endif %}
+
+<div style="display:flex;align-items:center;gap:16px;margin-bottom:24px;flex-wrap:wrap;">
+  <a href="/admin/errors" style="color:var(--muted);text-decoration:none;font-size:0.85rem;">&larr; Error Logs</a>
+  <span class="badge" style="font-size:1rem;padding:4px 14px;
+    color:{% if entry.status_code >= 500 %}var(--critical){% else %}var(--warning){% endif %};
+    border-color:{% if entry.status_code >= 500 %}var(--critical){% else %}var(--warning){% endif %};">
+    HTTP {{ entry.status_code }}
+  </span>
+  <h1 style="margin-bottom:0;font-size:1.3rem;">{{ entry.method }} {{ entry.path }}</h1>
+</div>
+
+<!-- WHERE DID THIS COME FROM? -->
+<div class="section">
+  <h2>Where did this come from?</h2>
+  <div class="table-wrap">
+    <table>
+      <tbody>
+        <tr>
+          <td style="width:160px;"><strong>Endpoint</strong></td>
+          <td>
+            {% if entry.endpoint %}
+              <span class="mono" style="font-weight:600;">{{ entry.endpoint }}</span>
+              <span class="muted mono" style="font-size:0.8rem;margin-left:10px;">{{ entry.method }} {{ entry.path }}</span>
+            {% else %}
+              <span class="mono">{{ entry.method }} {{ entry.path }}</span>
+            {% endif %}
+          </td>
+        </tr>
+        {% if entry.query_params %}
+        <tr>
+          <td><strong>Query params</strong></td>
+          <td class="mono muted">?{{ entry.query_params }}</td>
+        </tr>
+        {% endif %}
+        <tr>
+          <td><strong>Client</strong></td>
+          <td>
+            <span style="font-weight:500;">{{ client_type }}</span>
+            {% if entry.user_agent and entry.user_agent[:60] != client_type %}
+            <div class="muted" style="font-size:0.73rem;margin-top:3px;font-family:monospace;word-break:break-all;">{{ entry.user_agent }}</div>
+            {% endif %}
+          </td>
+        </tr>
+        <tr>
+          <td><strong>IP address</strong></td>
+          <td class="mono">{{ entry.ip_address or '—' }}</td>
+        </tr>
+        <tr>
+          <td><strong>User</strong></td>
+          <td>
+            {% if entry.user_id %}
+              <a href="/admin/users/{{ entry.user_id }}" class="mono">{{ entry.user_id }}</a>
+            {% else %}
+              <span class="muted">Unauthenticated request</span>
+            {% endif %}
+          </td>
+        </tr>
+        <tr>
+          <td><strong>Time</strong></td>
+          <td class="mono">{{ entry.occurred_at.strftime('%Y-%m-%d %H:%M:%S UTC') }}</td>
+        </tr>
+        <tr>
+          <td><strong>Duration</strong></td>
+          <td class="mono">
+            {% if entry.duration_ms %}
+              {{ '%.1f'|format(entry.duration_ms) }} ms
+              {% if entry.duration_ms > 3000 %}
+              <span style="color:var(--warning);font-size:0.8rem;margin-left:8px;">slow — possible timeout or lock contention</span>
+              {% endif %}
+            {% else %}—{% endif %}
+          </td>
+        </tr>
+        <tr>
+          <td><strong>Request ID</strong></td>
+          <td class="mono muted" style="font-size:0.8rem;">{{ entry.request_id or '—' }}</td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+</div>
+
+<!-- WHY DID THIS HAPPEN? -->
+<div class="section">
+  <h2>Why did this happen?</h2>
+
+  {% if entry.response_summary %}
+  <div class="alert {% if entry.status_code >= 500 %}alert-error{% else %}alert-warning{% endif %}" style="font-family:monospace;font-size:0.875rem;margin-bottom:20px;">
+    {{ entry.response_summary }}
+  </div>
+  {% endif %}
+
+  <div class="table-wrap" style="margin-bottom:20px;">
+    <table>
+      <tbody>
+        <tr>
+          <td style="width:160px;"><strong>Error class</strong></td>
+          <td class="mono">{{ entry.error_type or '—' }}</td>
+        </tr>
+        <tr>
+          <td><strong>Error message</strong></td>
+          <td style="white-space:pre-wrap;word-break:break-word;">{{ entry.error_detail or '—' }}</td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+
+  {% if entry.request_body %}
+  <h3>Request body that triggered this error</h3>
+  <pre style="margin-top:8px;">{{ entry.request_body | tojson(indent=2) }}</pre>
+  {% endif %}
+</div>
+
+<!-- STACK TRACE (500s only) -->
+{% if entry.traceback %}
+<div class="section">
+  <h2>Stack trace</h2>
+  <p class="muted" style="font-size:0.8rem;margin-bottom:12px;">
+    Full Python traceback — the exact line that threw the exception is at the bottom.
+  </p>
+  <pre style="max-height:600px;overflow-y:auto;background:#1a1a1a;color:#f0ebe0;
+              padding:20px;line-height:1.6;font-size:0.78rem;border-radius:4px;">{{ entry.traceback }}</pre>
+</div>
+{% endif %}
+
+{% endblock %}

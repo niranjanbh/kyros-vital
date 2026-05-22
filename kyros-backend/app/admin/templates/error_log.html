@@ -1,0 +1,120 @@
+{% extends "base.html" %}
+{% block content %}
+<h1>Error Logs</h1>
+
+{% if summary_24h %}
+<div class="section">
+  <h3>Last 24 hours by status code</h3>
+  <div class="metric-grid" style="margin-bottom:0;">
+    {% for code, count in summary_24h.items() | sort %}
+    <div class="metric-card">
+      <div class="label">HTTP {{ code }}</div>
+      <div class="value" style="color:{% if code|int >= 500 %}var(--critical){% elif code|int >= 400 %}var(--warning){% else %}var(--positive){% endif %};">
+        {{ count }}
+      </div>
+    </div>
+    {% endfor %}
+  </div>
+</div>
+{% endif %}
+
+<form method="get" class="filter-bar" style="margin-top:24px;">
+  <div class="form-group" style="margin:0;">
+    <select name="status_code" style="width:110px;">
+      <option value="">All codes</option>
+      {% for code in [400,401,403,404,422,429,500,502,503] %}
+      <option value="{{ code }}" {% if filter_status_code == code|string %}selected{% endif %}>{{ code }}</option>
+      {% endfor %}
+    </select>
+  </div>
+  <div class="form-group" style="margin:0;">
+    <input type="text" name="path_contains" value="{{ filter_path }}" placeholder="Path contains…" style="width:200px;">
+  </div>
+  <div class="form-group" style="margin:0;">
+    <input type="text" name="error_type" value="{{ filter_error_type }}" placeholder="Error type…" style="width:160px;">
+  </div>
+  <div class="form-group" style="margin:0;">
+    <input type="date" name="from_date" value="{{ filter_from_date }}">
+  </div>
+  <div class="form-group" style="margin:0;">
+    <input type="date" name="to_date" value="{{ filter_to_date }}">
+  </div>
+  <button type="submit" class="btn btn-sm">Filter</button>
+  <a href="/admin/errors" class="btn btn-sm">Clear</a>
+</form>
+
+<p class="muted" style="margin-bottom:16px;font-size:0.8rem;">
+  Showing {{ entries|length }} of {{ total }} entries (page {{ page }})
+</p>
+
+<div class="table-wrap">
+  <table>
+    <thead><tr>
+      <th>Time</th>
+      <th>Code</th>
+      <th>Endpoint / Path</th>
+      <th>Why (error message)</th>
+      <th>From (client)</th>
+      <th>User</th>
+      <th>ms</th>
+    </tr></thead>
+    <tbody>
+      {% for e in entries %}
+      <tr style="cursor:pointer;" onclick="window.location='/admin/errors/{{ e.id }}'">
+        <td class="mono" style="white-space:nowrap;">{{ e.occurred_at.strftime('%m-%d %H:%M:%S') }}</td>
+        <td>
+          <span class="badge" style="color:{% if e.status_code >= 500 %}var(--critical){% elif e.status_code >= 400 %}var(--warning){% else %}var(--ink){% endif %};border-color:{% if e.status_code >= 500 %}var(--critical){% elif e.status_code >= 400 %}var(--warning){% else %}var(--hairline){% endif %};">
+            {{ e.status_code }}
+          </span>
+        </td>
+        <td style="max-width:240px;">
+          {% if e.endpoint %}
+          <div class="mono" style="font-weight:600;font-size:0.82rem;">{{ e.endpoint }}</div>
+          {% endif %}
+          <div class="mono muted" style="font-size:0.75rem;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;" title="{{ e.method }} {{ e.path }}">
+            {{ e.method }} {{ e.path }}
+          </div>
+        </td>
+        <td style="max-width:300px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;" title="{{ e.response_summary or e.error_detail or '' }}">
+          {% set msg = e.response_summary or e.error_detail %}
+          {{ msg[:110] if msg else '—' }}{% if msg and msg|length > 110 %}…{% endif %}
+        </td>
+        <td style="white-space:nowrap;">
+          {% if e.user_agent %}
+            {% if 'Expo' in e.user_agent or 'okhttp' in e.user_agent %}Mobile app
+            {% elif 'Mozilla' in e.user_agent or 'Chrome' in e.user_agent %}Browser
+            {% elif 'curl' in e.user_agent %}cURL
+            {% elif 'python' in e.user_agent or 'httpx' in e.user_agent %}Python
+            {% else %}<span class="muted" title="{{ e.user_agent }}">{{ e.user_agent[:25] }}</span>
+            {% endif %}
+          {% else %}<span class="muted">—</span>{% endif %}
+        </td>
+        <td class="mono muted" style="font-size:0.78rem;">{{ str(e.user_id)[:8] if e.user_id else '—' }}</td>
+        <td class="mono muted">{{ '%.0f'|format(e.duration_ms) if e.duration_ms else '—' }}</td>
+      </tr>
+      {% else %}
+      <tr><td colspan="7" class="muted">No errors found.</td></tr>
+      {% endfor %}
+    </tbody>
+  </table>
+</div>
+
+<div style="display:flex;align-items:center;gap:32px;margin-top:16px;">
+  <div class="pagination">
+    {% if page > 1 %}
+    <a href="?page={{ page - 1 }}&status_code={{ filter_status_code }}&path_contains={{ filter_path }}&error_type={{ filter_error_type }}&from_date={{ filter_from_date }}&to_date={{ filter_to_date }}">&larr; Prev</a>
+    {% endif %}
+    <span>Page {{ page }}</span>
+    {% if entries|length == page_size %}
+    <a href="?page={{ page + 1 }}&status_code={{ filter_status_code }}&path_contains={{ filter_path }}&error_type={{ filter_error_type }}&from_date={{ filter_from_date }}&to_date={{ filter_to_date }}">Next &rarr;</a>
+    {% endif %}
+  </div>
+
+  <form method="post" action="/admin/errors/purge" style="display:flex;align-items:center;gap:8px;" onsubmit="return confirm('Delete all errors older than N days?')">
+    <label style="font-size:0.8rem;color:var(--muted);">Purge older than</label>
+    <input type="number" name="days" value="30" min="1" style="width:60px;padding:4px 6px;font-size:0.8rem;border:1px solid var(--hairline);border-radius:var(--radius);">
+    <label style="font-size:0.8rem;color:var(--muted);">days</label>
+    <button type="submit" class="btn btn-sm btn-danger">Purge</button>
+  </form>
+</div>
+{% endblock %}
