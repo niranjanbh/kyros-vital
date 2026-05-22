@@ -41,6 +41,12 @@ async def update_me(
 ) -> User:
     if body.subscription_tier is not None:
         raise ForbiddenError("subscription_tier can only be changed by an admin.")
+    if body.name is not None:
+        current_user.name = body.name
+    if body.age is not None:
+        current_user.age = body.age
+    if body.gender is not None:
+        current_user.gender = body.gender
     if body.email is not None:
         current_user.email = body.email
     if body.timezone is not None:
